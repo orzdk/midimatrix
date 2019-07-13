@@ -315,6 +315,7 @@ socket.on("connection", function (client) {
 
 	});
 
+
 	/* Patch Files */
 
 	apiRoutes.post('/savetranslations', function(req, res){	
@@ -385,7 +386,6 @@ socket.on("connection", function (client) {
 		});
 
 	});
-
 
 	apiRoutes.post('/getpatchfilelist', function(req, res){	
 
@@ -561,7 +561,6 @@ socket.on("connection", function (client) {
 	});
 
 
-
 	/* Operations  - Reset & Upload */
 
 	apiRoutes.post('/hardreset', function(req, res){	
@@ -645,6 +644,7 @@ socket.on("connection", function (client) {
 		});
 
 	});
+
 
 	/* Operations - SendMidi */
 

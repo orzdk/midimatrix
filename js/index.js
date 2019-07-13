@@ -19,6 +19,7 @@ var semf = null;
 var unitColors;
 
 var WEB_MIDI = 0;
+
 var ip = "192.168.0.21:8000";
 
 /* Render & Refresh ---------------------------------------- */
@@ -138,28 +139,26 @@ savePatch = function(){
 
 	fileName = $("#filename").val();
 
-	if (fileName != 'DEFAULT') {
+	APP_STATE.APP_SETTINGS.footNumbers = {
+		f1: { co:  Number($("#foot1_controller").val()), va:  Number($("#foot1_value").val()), ch: Number($("#foot1_channel").val()), ev: $("#foot1_event").val(), evv: Number($("#foot1_eventvalue").val())},
+		f2: { co:  Number($("#foot2_controller").val()), va:  Number($("#foot2_value").val()), ch: Number($("#foot2_channel").val()), ev: $("#foot2_event").val(), evv: Number($("#foot2_eventvalue").val())},
+		f3: { co:  Number($("#webmidi_controller").val()), va:  Number($("#webmidi_value").val()), ch: Number($("#webmidi_channel").val())},
+		f4: { co:  Number($("#nrpn_controller").val()), va:  Number($("#nrpn_value").val()), ch: Number($("#nrpn_channel").val())}
+	}
 
-		APP_STATE.APP_SETTINGS.footNumbers = {
-			f1: { co:  Number($("#foot1_controller").val()), va:  Number($("#foot1_value").val()), ch: Number($("#foot1_channel").val()), ev: $("#foot1_event").val(), evv: Number($("#foot1_eventvalue").val())},
-			f2: { co:  Number($("#foot2_controller").val()), va:  Number($("#foot2_value").val()), ch: Number($("#foot2_channel").val()), ev: $("#foot2_event").val(), evv: Number($("#foot2_eventvalue").val())},
-			f3: { co:  Number($("#webmidi_controller").val()), va:  Number($("#webmidi_value").val()), ch: Number($("#webmidi_channel").val())},
-			f4: { co:  Number($("#nrpn_controller").val()), va:  Number($("#nrpn_value").val()), ch: Number($("#nrpn_channel").val())}
+	patchData = {
+		filename: fileName,
+		patch: {
+			APP_STATE: APP_STATE
 		}
+	}
 
-		patchData = {
-			filename: fileName,
-			patch: {
-				APP_STATE: APP_STATE
-			}
-		}
-		
+	saveTranslations({translations:APP_STATE.APP_SETTINGS.translations}, function(){
 		savePatchFile(patchData, function(newlist){
 			APP_STATE.APP_PATCHES = newlist;
 			render();
 		});
-
-	}
+	});
 
 }
 
@@ -347,7 +346,7 @@ renameDeviceConnection = function(){
 
 	sel = setToRename != "" ? setToRename : selectedFrom;
 
-	selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaDeviceName;
+	selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaDeviceName + APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaClientName;
 
 	inputName = $("#inputName").val();
 	outputName = $("#outputName").val();
@@ -410,8 +409,8 @@ renderDeviceButtons = function(){
 			classs = "mm-but mm-but-filter";
 		}
 			
-  		outputName = translatedName(alsaDevice.alsaDeviceName, "outputName", alsaDevice.alsaClientName);
-  		inputName = translatedName(alsaDevice.alsaDeviceName, "inputName", alsaDevice.alsaClientName);
+  		outputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "outputName", alsaDevice.alsaClientName);
+  		inputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "inputName", alsaDevice.alsaClientName);
 
   		if (showClient) {
   			outputname += alsaDevice.alsaDeviceID;
@@ -459,9 +458,9 @@ renderConnections = function(){
 		iclasss = connection.to.alsaDeviceNameID.indexOf("in_") > -1 ? "mm-but mm-but-filter" : "mm-but mm-but-connection" + " uc " + unitColors[connection.to.alsaDeviceName];
 
   		$table.append("<tr>");
-  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + translatedName(connection.from.alsaDeviceName,"outputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceName + connection.from.alsaClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + translatedName(connection.from.alsaDeviceName + connection.from.alsaClientName,"outputName") + "'></td>")
   		$table.append("<td><input onclick='setToScript(\"" + connection.connectionUID + "\")' type='button' class='mm-but mm-but-action' value='DISCO'></td>")
-  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + translatedName(connection.to.alsaDeviceName,"inputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceName + connection.to.alsaClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + translatedName(connection.to.alsaDeviceName + connection.to.alsaClientName,"inputName") + "'></td>")
   		$table.append("</tr>");
 
 	});
@@ -529,7 +528,7 @@ renderScripts = function() {
 	$.each(APP_STATE.APP_PATCHES, function(key,obj){
 		isSelected = key == currentPatchIdx ? " [!]" : "";
 
-		if (obj.toString() != "TEMP.json")
+		if (obj.toString() != "TEMP.json" && obj.toString() != "translations.json")
 		$(".footer-div").append("<input onclick='loadPatch(\"" + key + "\")' type='button' class='mm-but mm-but-script' value='" + obj.toString().replace('.json','') + isSelected  + "'>");
 	});	
 
@@ -632,7 +631,7 @@ holdToRename = function(realA){
 
 		isFilter = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientIsFilter
 		selectedPID = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientPID;
-		selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceName;
+		selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceName + APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientName;
 
 		outputName = translatedName(selectedName,"outputName");
   		inputName = translatedName(selectedName,"inputName");
@@ -904,7 +903,7 @@ $(document).ready(function(){
 			}
 
 			if(nm) sendMidi(ccString, function(printthis){
-				printer(printthis);
+				printer(JSON.stringify(printthis));
 			});
 
 		} else if ($(".footpn").is(":checked")){

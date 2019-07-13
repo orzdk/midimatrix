@@ -61,11 +61,9 @@
     }
   },
   "APP_PATCHES": [
-    "DefaultSetup.json",
     "TEMP.json",
     "Zero.json",
-    "translations.json",
-    "xrs.json"
+    "translations.json"
   ],
   "APP_SCRIPTS": [
     {
@@ -233,6 +231,38 @@
       "USB MIDI cable MIDI 2": {
         "inputName": "Left DIN",
         "outputName": "Left DIN"
+      },
+      "out_1": {
+        "inputName": "out_1undefined",
+        "outputName": "Print"
+      },
+      "in_1": {
+        "inputName": "Print",
+        "outputName": "in_1undefined"
+      },
+      "out_1print_mididings": {
+        "inputName": "out_1print_mididingsundefined",
+        "outputName": "Print"
+      },
+      "in_1print_mididings": {
+        "inputName": "Print2",
+        "outputName": "in_1print_mididingsundefined"
+      },
+      "USB MIDI cable MIDI 1USB MIDI cable": {
+        "inputName": "Left DIN",
+        "outputName": "Left DIN"
+      },
+      "USB MIDI cable MIDI 2USB MIDI cable": {
+        "inputName": "Left DIN",
+        "outputName": "Left DIN"
+      },
+      "USB MidiKliK Build-1101 MIDI 1USB MidiKliK Build-1101": {
+        "inputName": "Left Jack",
+        "outputName": "Left Jack"
+      },
+      "UM-ONE MIDI 1UM-ONE": {
+        "inputName": "Back DIN",
+        "outputName": "Back DIN"
       }
     }
   }
