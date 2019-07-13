@@ -1,0 +1,26 @@
+{
+  "USB MIDI cable MIDI 1": {
+    "inputName": "Left DIN",
+    "outputName": "Left DIN"
+  },
+  "UM-ONE MIDI 1": {
+    "inputName": "Back DIN",
+    "outputName": "Back DIN"
+  },
+  "SQ-1 MIDI 1": {
+    "inputName": "SQ-1 #1",
+    "outputName": "SQ-1 #1"
+  },
+  "SQ-1 MIDI 2": {
+    "inputName": "SQ-1 MIDI 2undefined",
+    "outputName": "SQ-1 #2"
+  },
+  "USB MidiKliK Build-1101 MIDI 1": {
+    "inputName": "Left Jack",
+    "outputName": "Left Jack"
+  },
+  "USB MIDI cable MIDI 2": {
+    "inputName": "Left DIN",
+    "outputName": "Left DIN"
+  }
+}

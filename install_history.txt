@@ -1,0 +1,48 @@
+    1  ifconfig
+    2  exit
+    3  rasp/config
+    4  raspi-config
+    5  sudo raspi-config
+    6  sudo shutdoown now
+    7  sudo shutdown now
+    8  sudo nano /etc/dphys-swapfile
+    9  sudo /etc/init.d/dphys-swapfile stop
+   10  sudo /etc/init.d/dphys-swapfile start
+   11  sudo apt-get install libasound2-dev libboost-all-dev scons gcc libffi-dev libssl-dev python3-dev samba samba-common-bin
+   12  sudo apt-get update
+   13  sudo apt-get upgrade
+   14  sudo apt-get install libasound2-dev libboost-all-dev scons gcc libffi-dev libssl-dev python3-dev samba samba-common-bin
+   15  pwd
+   16  mkdir download
+   17  cd download/
+   18  curl -o node-v11.15.0-linux-armv6l.tar.gz https://nodejs.org/dist/latest-v11.x/node-v11.15.0-linux-armv6l.tar.gz
+   19  tar -xzf node-v11.15.0-linux-armv6l.tar.gz
+   20  ls /usr/local
+   21  sudo cp -r node-v11.15.0-linux-armv6l/* /usr/local
+   22  curl -o mididings-20120419.tar.gz http://das.nasophon.de/download/mididings-20120419.tar.gz
+   23  tar -xzf mididings-20120419.tar.gz
+   24  cd mididings-20120419/
+   25  ls
+   26  ./setup.py build --disable-jack-midi
+   27  sudo apt-get install libgtk2.0-dev
+   28  ./setup.py build --disable-jack-midi
+   29  sudo nano setup.py 
+   30  ./setup.py build --disable-jack-midi
+   31  sudo reboot now
+   32  aconnect -l
+   33  pwd
+   34  ls
+   35  mkdir midimatrix
+   36  rmdir midimatrix
+   37  mkdir -m 1777  midimatrix
+   38  cd midimatrix/
+   39  ls
+   40  pwd
+   41  npm install --unsafe-persm
+   42  sudo pkill -9 npm
+   43  npm install --unsafe-perm
+   44  node server.js
+   45  ls
+   46  ls -l
+   47  node server.js
+   48  history > install_history.txt

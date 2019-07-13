@@ -1,0 +1,53 @@
+
+Libs:
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install libasound2-dev libboost-all-dev scons gcc libffi-dev libssl-dev python3-dev samba samba-common-bin libgtk2.0-dev python-setuptools xrdp
+
+sudo easy_install pip
+pip install decorator --user
+
+sudo mkdir -m 1777 /home/pi/midimatrix
+sudo nano /etc/samba/smb.conf
+
+[midimatrix]
+Comment = Pi shared folder
+Path = /home/pi/midimatrix
+Browseable = yes
+Writeable = Yes
+only guest = no
+create mask = 0777
+directory mask = 0777
+Public = yes
+Guest ok = yes
+
+sudo smbpasswd -a pi
+sudo /etc/init.d/samba restart
+
+Swap:
+sudo nano /etc/dphys-swapfile
+CONF_SWAPSIZE=1024
+sudo /etc/init.d/dphys-swapfile stop
+sudo /etc/init.d/dphys-swapfile start
+
+
+Node:
+curl -o node-v11.15.0-linux-armv6l.tar.gz https://nodejs.org/dist/latest-v11.x/node-v11.15.0-linux-armv6l.tar.gz
+tar -xzf node-v11.15.0-linux-armv6l.tar.gz
+sudo cp -r node-v11.15.0-linux-armv6l/* /usr/local
+
+Mididings:
+curl -o mididings-20120419.tar.gz http://das.nasophon.de/download/mididings-20120419.tar.gz
+tar -xzf mididings-20120419.tar.gz
+
+./setup.py:
+
+include_dirs.append('/usr/lib/arm-linux-gnueabihf/')
+library_dirs.append('/usr/lib/arm-linux-gnueabihf/')
+libraries.append('boost_python')
+libraries.append('boost_thread')
+
+./setup.py build --disable-jack-midi
+./setup.py install --disable-jack-midi
+
+

@@ -1,0 +1,19 @@
+[
+	{ "type": "filter",	"paramsType": "EVENT",		"title": "Filter", 			"params": ["EVENTS"], 					 "paramsMask": "Filter({0})" },
+	{ "type": "chanll", "paramsType": "NUMERIC", 	"title": "Channel",			"params": ["CHANNEL"],		 			 "paramsMask": "Channel({0})" },	
+	{ "type": "gnrtor",	"paramsType": "NUMERIC",	"title": "Ctrl", 			"params": ["CONTROLLER", "VALUE"], 		 "paramsMask": "Ctrl({0},{1})" },	
+	{ "type": "mapper",	"paramsType": "CCMAP",		"title": "CtrlMap", 		"params": ["INPUT", "OUTPUT"], 			 "paramsMask": "CtrlMap({0},{1})" },
+	{ "type": "filter", "paramsType": "NUMERIC",	"title": "CtrlFilter", 		"params": ["CONTROLLER"], 				 "paramsMask": "CtrlFilter({0})" },
+	{ "type": "filter", "paramsType": "NUMERIC", 	"title": "CtrlValueFilter", "params": ["CONTROLLER-VALUE"], 		 "paramsMask": "CtrlValueFilter({0})" },
+	{ "type": "splitr", "paramsType": "KEYSPLIT",	"title": "KeySplit", 		"params": ["THRES", "LOWER", "UPPER"], 	 "paramsMask": "KeySplit({0},Port({1}),Port({2}))" },
+	{ "type": "filter", "paramsType": "DATA",  		"title": "SysExFilter", 	"params": ["DATA"], 					 "paramsMask": "SysExFilter({0})" },
+	{ "type": "gnrtor", "paramsType": "NUMERIC", 	"title": "SysExGenerator", 	"params": ["SYSEX"], 					 "paramsMask": "SysEx('{0}')" },
+	{ "type": "poport", "paramsType": "NUMERIC", 	"title": "Port",			"params": ["PORT"],		 			 	 "paramsMask": "Port({0})" },	
+	{ "type": "filter", "paramsType": "NUMERIC", 	"title": "PortFilter", 		"params": ["PORT"],		 				 "paramsMask": "PortFilter({0})" },
+	{ "type": "printr",	"paramsType": "NUMERIC", 	"title": "Print",			"params": [], 			 			 	 "paramsMask": "Print()" },
+	{ "type": "filter", "paramsType": "NUMERIC", 	"title": "ProgramFilter",	"params": ["PROGRAM-NUMBER"], 			 "paramsMask": "ProgramFilter({0})" },
+	{ "type": "transp", "paramsType": "NUMERIC", 	"title": "Transpose",		"params": ["OFFSETOCTAVES"], 			 "paramsMask": "Transpose({0})" },
+	{ "type": "gnrtor", "paramsType": "NUMERIC", 	"title": "Generator",		"params": ["TYPE","PORT","CHANNEL", "DATA1","DATA2"], 	 "paramsMask": "Generator({0},{1},{2},{3},{4})" },
+	{ "type": "frrtxt",	"paramsType": "STRING", 	"title": "Freetext",		"params": ["STRING"],	 			 	 "paramsMask": "{0}" },
+	{ "type": "progrm",	"paramsType": "STRING", 	"title": "Program",			"params": ["PROGRAM"],	 			 	 "paramsMask": "{0}" }
+]

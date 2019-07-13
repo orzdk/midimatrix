@@ -1,0 +1,141 @@
+[
+  {
+    "title": "print",
+    "units": [
+      {
+        "type": "filter",
+        "paramsType": "EVENT",
+        "title": "Filter",
+        "params": [
+          "EVENTS"
+        ],
+        "paramsMask": "Filter({0})",
+        "paramsValues": [
+          "SYSRT_SENSING"
+        ],
+        "reversed": "true"
+      },
+      {
+        "type": "printr",
+        "paramsType": "NUMERIC",
+        "title": "Print",
+        "paramsMask": "Print()"
+      }
+    ]
+  },
+  {
+    "title": "ctos",
+    "units": [
+      {
+        "type": "frtxt",
+        "paramsType": "STRING",
+        "title": "Freetext",
+        "params": [
+          "STRING"
+        ],
+        "paramsMask": "{0}",
+        "objects": {
+          "STRING": "Filter(SYSRT_CONTINUE) % Generator(SYSRT_START, EVENT_PORT, EVENT_CHANNEL, 0, 0)"
+        },
+        "reversed": "false"
+      },
+      {
+        "type": "filter",
+        "paramsType": "EVENT",
+        "title": "Filter",
+        "params": [
+          "EVENTS"
+        ],
+        "paramsMask": "Filter({0})",
+        "reversed": "true",
+        "paramsValues": [
+          "SYSRT_CLOCK",
+          "SYSCM_SONGPOS"
+        ]
+      },
+      {
+        "type": "print",
+        "paramsType": "NUMERIC",
+        "title": "Print",
+        "paramsMask": "Print()"
+      }
+    ]
+  },
+  {
+    "title": "noclock",
+    "units": [
+      {
+        "type": "filter",
+        "paramsType": "EVENT",
+        "title": "Filter",
+        "params": [
+          "EVENTS"
+        ],
+        "paramsMask": "Filter({0})",
+        "paramsValues": [
+          "SYSRT_CLOCK"
+        ],
+        "reversed": "true"
+      },
+      {
+        "type": "print",
+        "paramsType": "NUMERIC",
+        "title": "Print",
+        "paramsMask": "Print()",
+        "reversed": "false"
+      }
+    ]
+  },
+  {
+    "title": "chan11",
+    "units": [
+      {
+        "type": "frrtxt",
+        "paramsType": "STRING",
+        "title": "Freetext",
+        "params": [
+          "STRING"
+        ],
+        "paramsMask": "{0}",
+        "objects": {
+          "STRING": "Channel(11)"
+        }
+      }
+    ]
+  },
+  {
+    "title": "onlyclock",
+    "units": [
+      {
+        "type": "filter",
+        "paramsType": "EVENT",
+        "title": "Filter",
+        "params": [
+          "EVENTS"
+        ],
+        "paramsMask": "Filter({0})",
+        "paramsValues": [
+          "SYSRT_CLOCK"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "noprgchg",
+    "units": [
+      {
+        "type": "filter",
+        "paramsType": "EVENT",
+        "title": "Filter",
+        "params": [
+          "EVENTS"
+        ],
+        "paramsMask": "Filter({0})",
+        "paramsValues": [
+          "PROGRAM"
+        ],
+        "reversed": "true"
+      }
+    ]
+  }
+]

@@ -1,0 +1,168 @@
+
+<!doctype html>
+
+<html>
+
+<head>
+	<title>MÎ</title>
+
+	<link rel="stylesheet" href="./css/midimatrix.css" media="screen">
+
+	<script src="./js/vendor/jquery-3.3.1.min.js"></script>	
+	<script src="./js/vendor/webmidi@2.0.0.js"></script>	
+	<script src="./node_modules/socket.io-client/dist/socket.io.js"></script>
+	<script src="./node_modules/async/dist/async.min.js"></script>
+
+</head>
+
+<body>
+
+	<div style="display:block">
+
+		<table id="structure"><tr>
+
+				<!-- Devices -->	
+				<td class="struct-td">
+
+					<table id="t-devices">
+						<tr>
+							<td id="fromdevices"></td>
+							<td id="todevices"></td>
+						</tr>
+						<tr>
+							<td><input class="mm-but mm-but-function mm-hidden renamecontrol mm-txt" type=text id="outputName" placeholder="Output" value=""></td>
+							<td><input class="mm-but mm-but-function mm-hidden renamecontrol mm-txt" type=text id="inputName" placeholder="Input" value=""></td>
+						</tr>
+						<tr>
+							<td><input class="mm-but mm-but-function mm-hidden renamecontrol" type="button" id="renameButton" onclick="renameDeviceConnection()" value="Rename"></td>
+							<td><input class="mm-but mm-but-function mm-hidden renamecontrol" type="button" id="renameButton" onclick="cancelRename()" value="Cancel"></td>
+						</tr>
+						<tr>
+							<td colspan=2><input class="mm-but mm-but-function mm-hidden renamecontrol stopcontrol" type="button" id="renameButton" onclick="stopFilter2()" value="Stop Filter"></td>
+						</tr>
+					</table>	              	
+
+				</td>
+
+				<!-- Connections  -->	
+				<td class="struct-td struct-td-middle">
+					<table id="connection-table"></table>
+				</td>
+
+				<!-- Controls  -->
+				<td class="struct-td">
+
+					<!-- Controls  -->
+					<div class="footer-div flex-container"></div>
+					<br>
+
+					<!-- Messages  -->
+
+					<br>
+
+					<span style="font-size:8px;font-weight: bold"><span id="tempmsg"></span></span><br><br>
+
+					<span style="font-size:8px;font-weight: bold">Message Log&nbsp;
+					<span style="font-size:8px;font-weight: bold;cursor:pointer" onclick="$('#printermessages').empty()">[Clear]</span>
+					<hr>
+					<div id="printermessages"></div>
+
+					<!-- Foot & Webmidi Controls  -->
+
+					<label><b><span style="font-size:8px;font-weight: bold;">SendMidi</span></b><input type="checkbox" id="checkShowSendMidi"></label>
+
+					<hr>
+
+					<span id="sendMidiSpan" class="mm-hidden">
+
+					<label><input checked type="checkbox" id="cbfootblock" class="footcb footfoot">Foot 1/2</label>
+					<label><input type="checkbox" id="cbprevnext" class="footcb footpn">Prev/Next</label>
+					<label><input type="checkbox" id="cbwebmidi" class="footcb footwebmidi">Webmidi&nbsp;<select class="footselect" id="webmidi-output-select"></select></label>
+					
+					<br>
+					<br>
+
+					<table style="font-size: 10px">
+						
+						<tr style="height: 15px">
+							<td>Sender</td>
+							<td>Controller</td>
+							<td>Value</td>
+							<td>Channel OR </td>
+							<td>Event</td>
+							<td>Value</td>
+							<td>Send</td>
+						</tr>
+
+						<tr>
+							<td>Custom1</td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot1_controller"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot1_value"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot1_channel"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot1_event"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot1_eventvalue"></td>
+							<td><input class="mm-narrow-text" type="button" value="Send" id="foot1_fire"></td>
+
+						</tr>
+
+
+						<tr>
+							<td>Custom2</td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot2_controller"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot2_value"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot2_channel"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot2_event"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="foot2_eventvalue"></td>
+							<td><input class="mm-narrow-text" type="button" value="Send" id="foot2_fire"></td>
+						</tr>
+
+
+						<tr>
+							<td>Manual</td>
+							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_controller"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_value"></td>
+							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_channel"></td>
+							<td></td>
+							<td></td>
+							<td><input class="mm-narrow-text" type="button" value="Send" id="webmidi_fire"></td>
+
+						</tr>
+
+
+					</table>
+
+					</span>
+
+
+					<!-- Uploader  -->
+
+					<label><b><span style="font-size:8px;font-weight: bold;">Uploader</span></b><input type="checkbox" id="checkShowUploader"></label>
+
+					<div class="uploader mm-hidden">
+						<br><form id="uploadForm">
+						<textarea id="uploaderText"></textarea><br><input type="text" placeholder="filename" id="uploaderFileName"></form><br>
+						<input type=button class="mm-but mm-but-function" onclick="doUpload()" id="doUpload" value="Upload" style="margin-left:-0px">
+					</div>
+
+					<span id="pleaseWait" class="mm-hidden">Please wait...</span>
+
+				</td>
+
+			</tr>
+
+			<tr>
+				
+				<td colspan="3">
+					<div id="foooter"></div>
+				</td>
+			</tr>
+
+		</table>
+	</div>
+
+	<script src="./js/ajax.js"></script>
+	<script src="./js/common.js"></script>
+	<script src="./js/index.js"></script>
+
+</body>
+</html>
