@@ -1,91 +1,48 @@
 
-function sendMidi(sendmidistring, callback){
+/* Generic AJAX */
+
+ajaxPost = function(url, data, callback){
 
 	$.ajax({
 	  	type: "POST",
-	  	url: "api/sendmidi",	  	
-	  	data: { sendmidistring: sendmidistring },
+	  	url: url,	  	
+	  	data: data,
 	  	success: function(data){
 	  		if (callback) callback(data);
 	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
+	  	error: function(err){
+	  		if (callback) callback(err);
 	  	}
 	});
 
 }
 
-function getTemp(callback){
+/* System */
 
+reboot = function(){
 	$.ajax({
 	  	type: "POST",
-	  	url: "api/gettemp",	  	
-	  	data: { },
-	  	success: function(data){
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
-	  	}
+	  	url: "api/reboot"
 	});
 
 }
 
-function reboot(callback){
-
+shutdown = function(callback){
 	$.ajax({
 	  	type: "POST",
-	  	url: "api/reboot",	  	
-	  	data: { },
-	  	success: function(data){
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
-	  	}
+	  	url: "api/shutdown"
 	});
 
 }
 
-function shutdown(callback){
+/* Scripts & Definitions */
 
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/shutdown",	  	
-	  	data: { },
-	  	success: function(data){
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
-	  	}
-	});
-
-}
-
-function getRunningScripts(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/getrunningscripts",	  	
-	  	data: { },
-	  	success: function(data){
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
-	  	}
-	});
-
-}
-
-
-function saveScriptsDefinition(scriptsDef, callback){
+saveScriptsDefinition = function(scriptsDef, callback){
 
 	$.ajax({
 	  	type: "POST",
 	  	url: "api/savescriptdefinitions",	  	
-	  	data: { scriptsDef: scripts },
+	  	data: { scriptsDef: scriptsDef },
 	  	success: function(data){
 	  		if (callback) callback(data);
 	  	}, 
@@ -96,23 +53,25 @@ function saveScriptsDefinition(scriptsDef, callback){
 
 }
 
-function loadUnits(callback){
+saveScriptFile = function(data, callback){
 
 	$.ajax({
 	  	type: "POST",
-	  	url: "api/loadunits",	  	
-	  	data: {},
+	  	url: "api/savescriptfile",	  	
+	  	data: data,
 	  	success: function(data){
-	  		if (callback) callback(data);
+	  		if(callback) callback(data);
 	  	}, 
 	  	error: function(errr){
-	  		if (callback) callback(errr);
+	  		if(callback) callback(errr);
 	  	}
 	});
 
 }
 
-function saveTranslations(data, callback){
+/* Translations */
+
+saveTranslations = function(data, callback){
 
 	$.ajax({
 	  	type: "POST",
@@ -128,37 +87,7 @@ function saveTranslations(data, callback){
 
 }
 
-function getTranslations(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/gettranslations",	  	
-	  	data: {},
-	  	success: function(data){
-	  		if(callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if(callback) callback(errr);
-	  	}
-	});
-
-}
-
-function saveScriptFile(data, callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/savescriptfile",	  	
-	  	data: data,
-	  	success: function(data){
-	  		if(callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if(callback) callback(errr);
-	  	}
-	});
-
-}
+/* Devices & Connections */
 
 connectDevices = function(from,to,callback){
 
@@ -208,85 +137,7 @@ clearAllConnections = function(callback){
 
 }
 
-saveAppTemp = function(aas, callback){
-	
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/saveapptemp",	  	
-	  	data: { APP_SETTINGS: aas },
-	  	success: function(data){
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(data){
-
-	  	}
-	});
-
-}
-
-loadUnitColors = function(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/loadunitcolors",	  	
-	  	data: {},
-	  	success: function(data){
-	  		callback(data);
-	  	}, 
-	  	error: function(data){
-
-	  	}
-	});
-
-}
-
-loadAppTemp = function(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/loadapptemp",	  	
-	  	data: {},
-	  	success: function(data){
-	  		callback(JSON.parse(data));
-	  	}, 
-	  	error: function(data){
-
-	  	}
-	});
-
-}
-
-loadMidiDevices = function(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/getdevices",	  	
-	  	data: {},
-	  	success: function(midiDevices){  		
-	  		callback(midiDevices);
-		},
-		error: function(data){
-	  		console.log(data);
-		}
-	});
-
-}
-
-loadPatchFileList = function(callback){
-	
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/getpatchfilelist",	  	
-	  	data: {},
-	  	success: function(data){
-	  		callback(data);
-	  	}, 
-	  	error: function(data){
-
-	  	}
-	});
-
-}
+/* Filter Files */
 
 saveFilterFile = function(data, callback){
 
@@ -304,7 +155,7 @@ saveFilterFile = function(data, callback){
 
 }
 
-runFileSmart = function(fileName, callback){
+runFilterFile = function(fileName, callback){
 
 	$.ajax({
 	  	type: "POST",
@@ -351,6 +202,8 @@ deleteFilterFile = function(data, callback){
 	});
 
 }
+
+/* Patch Files */
 
 savePatchFile = function(data, callback){
 
@@ -400,18 +253,3 @@ deletePatchFile = function(filename, callback){
 
 }
 
-uploadDataToFile = function(data, callback){
-	
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/uploaddatatofile",	  	
-	  	data: { data },
-	  	success: function(rep){
-	  		if (callback) callback(rep);
-	  	}, 
-	  	error: function(err){
-	  		if (callback) callback(err);
-	  	}
-	});
-
-}

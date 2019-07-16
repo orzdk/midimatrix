@@ -1,3 +1,11 @@
+var selectedFrom = "";
+var selectedFromFoot = false;
+var selectedFromScript = "";
+var setToRename = "";
+var holdRenameTimer = {};
+var currentPatchIdx = 0;
+var semf = null;
+var unitColors;
 
 var APP_STATE = {
 	APP_CONNECTIONS:{},
@@ -9,57 +17,34 @@ var APP_STATE = {
 	}
 }
 
-var selectedFrom = "";
-var selectedFromFoot = false;
-var selectedFromScript = "";
-var setToRename = "";
-var holdRenameTimer = {};
-var currentPatchIdx = 0;
-var semf = null;
-var unitColors;
-
-var WEB_MIDI = 0;
-
 var ip = "192.168.0.21:8000";
+var WEB_MIDI = 0;
 
 /* Render & Refresh ---------------------------------------- */
 
 render = function(){
 
-	loadUnitColors(function(_unitColors){
-		unitColors = _unitColors;
+	ajaxPost('api/loadunitcolors', null, function(uColors){
+
+		unitColors = uColors;
+
 		renderDeviceButtons();
 		renderConnections();
 		renderScripts();
+
+		$("#tempmsg").html(APP_STATE.APP_TEMP);	
+
 		thankYou();
+
 	});
 
 }
 
+
 refresh = function(callback){
-
-	loadMidiDevices(function(midiDevices){
-		loadPatchFileList(function(patchList){
-			loadScriptDefinitions(function(scripts){
-				getRunningScripts(function(runningScripts){
-					getTemp(function(tempdata){
-						getTranslations(function(translations){
-
-							APP_STATE.APP_RUNNING_SCRIPTS = runningScripts || [];
-							APP_STATE.APP_CONNECTIONS = midiDevices;
-							APP_STATE.APP_PATCHES = patchList;
-							APP_STATE.APP_SCRIPTS = scripts;
-							APP_STATE.APP_SETTINGS.translations = translations; 
-
-							$("#tempmsg").html(tempdata.r1.stdout.replace("temp=","PI Temp: "));	
-							console.log(APP_STATE);
-							
-							callback();
-						});
-					});
-				});
-			});
-		});
+	ajaxPost('api/getsystemstate', null, function(appState){
+		APP_STATE = appState;
+		if (callback) callback(); else render();
 	});
 
 }
@@ -90,7 +75,7 @@ processPatch = function(patchData){
 
 		async.forEachOf(patchData.APP_STATE.APP_RUNNING_SCRIPTS, (filter, key, callback) => {
 
-			runFileSmart(filter, function(runTime){
+			runFilterFile(filter, function(runTime){
 				callback();
 			});
 
@@ -110,9 +95,7 @@ processPatch = function(patchData){
 			    }, err2 => {
 			    	
 			    	saveTranslations({translations:patchData.APP_STATE.APP_SETTINGS.translations}, function(){
-				    	refresh(function(){
-							render();
-						});
+				    	refresh();
 			    	});
 
 		    	});
@@ -240,10 +223,7 @@ setTo = function(alsaDeviceID){
 		if (selectedFrom != ""){
 
 			connectDevices(selectedFrom, alsaDeviceID, function(){
-				loadMidiDevices(function(midiDevices){
-					APP_STATE.APP_CONNECTIONS = midiDevices;
-					render();
-				});
+				refresh()
 			});
 
 			selectedFrom = "";
@@ -282,9 +262,7 @@ setToScript = function(connectionID){
 	if (selectedFromScript && selectedFromScript != ""){
 
 		connectScript(selectedFromScript, connectionID, function(){
-			refresh(function(){
-				render();
-			});
+			refresh();
 		});
 
 		selectedFromScript = "";
@@ -305,10 +283,8 @@ startScript = function(connectionID){
 
 	selectedFromScript = "";
 
-	runFileSmart(fileName, function(runtime){
-		refresh(function(){
-			render();
-		});
+	runFilterFile(fileName, function(runtime){
+		refresh();
 	});
 
 }
@@ -319,7 +295,7 @@ connectScript = function(script, connection){
 
 	fileName = APP_STATE.APP_SCRIPTS[script].title;
 
-	runFileSmart(fileName, function(runtime){
+	runFilterFile(fileName, function(runtime){
 
 		newClientID = runtime.newClient;
 		newClientPID = runtime.newClientPID;
@@ -332,9 +308,7 @@ connectScript = function(script, connection){
 		connectDevices(from, newClientID + ":0");
 		connectDevices(newClientID + ":1", to);
 
-		refresh(function(){
-			render();
-		});
+		refresh();
 
 	});
 
@@ -394,8 +368,6 @@ renderDeviceButtons = function(){
 
 	$.each(APP_STATE.APP_CONNECTIONS.alsaDevices, function(alsaDeviceID, alsaDevice){
 
-		var showClient = showClientID && showClientID == 1;
-
 		hideOutput = false;
 		hideInput = false;
 		classs = "mm-but mm-but-connection";
@@ -411,11 +383,6 @@ renderDeviceButtons = function(){
 			
   		outputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "outputName", alsaDevice.alsaClientName);
   		inputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "inputName", alsaDevice.alsaClientName);
-
-  		if (showClient) {
-  			outputname += alsaDevice.alsaDeviceID;
-  			inputName += alsaDevice.alsaDeviceID;
-  		}
 
 		inputClass  = (alsaDevice.alsaDeviceIO.indexOf("I") > -1 && hideInput == false) ? classs : "mm-but-disabled";
 		outputClass = (alsaDevice.alsaDeviceIO.indexOf("O") > -1 && hideOutput == false) ? classs : "mm-but-disabled";
@@ -536,16 +503,12 @@ renderScripts = function() {
 
 
 	goConfig = function(){
-
-		saveAppTemp(APP_STATE, function(){
-			window.location='/config.html?currentPatchIdx=' + currentPatchIdx;
-		});
 		
 	}
 
 	/* Save Settings */
 
-	$("#foooter").append('<input type=button class="mm-but mm-but-connection foo" style="cursor:pointer" onclick="goConfig()" id="config" value="CONFIG">');
+	$("#foooter").append('<input type=button class="mm-but mm-but-connection foo" style="cursor:pointer" onclick="window.location=\'/config.html\'" id="config" value="CONFIG">');
 	$("#foooter").append('<input class="mm-but mm-but-script mm-txt foo foooter-but" type="text" id="filename" value="">');
 	$("#foooter").append('<input class="mm-but mm-but-script foo" type=button id="saveSettings" value="Save">');
 	$("#foooter").append('<input class="mm-but mm-but-script foo" type=button id="deleteSettings" value="Delete">');
@@ -563,7 +526,7 @@ renderScripts = function() {
 
 /* Misc -------------------------------------------------- */
 
-hardReset = function(callback){
+hardReset = function(){
 
 	pleaseWait();
 
@@ -574,7 +537,6 @@ hardReset = function(callback){
 	  	success: function(data){
 	  		setTimeout(function(){
 	  			window.location.reload();
-	  			if (callback) callback();
 	  		},1500);
 	  	}, 
 	  	error: function(data){}
@@ -582,26 +544,6 @@ hardReset = function(callback){
 
 }
 
-doUpload = function(){
-
-	t = $("#uploaderText").val();
-	fn = $("#uploaderFileName").val();
-	
-	data = { fileName: fn, fileText: t }
-
-    $.ajax({
-      url: 'api/uploaddatatofile', 
-      type: 'POST',
-      data: data                  
-    }).done(function(uploadResult){
-        refresh(function(){
-			render();
-		});
-    }).fail(function(){
-      console.log("An error occurred, the files couldn't be sent!");
-    });	
-
-}
 
 stopFilter2 = function(){
 
@@ -611,9 +553,7 @@ stopFilter2 = function(){
 	pid = Number(selectedPID);
 
 	stopFilterFile({pid:pid}, function(){
-		refresh(function(){
-			render();
-		});
+		refresh();
 	});
 	
 }
@@ -745,9 +685,7 @@ $(document).ready(function(){
 	});
 
 	socket.on("usb-update", function(msg, d) {
-		refresh(function(){
-			render();
-		});
+		refresh();
 	
 	});
 
@@ -755,9 +693,7 @@ $(document).ready(function(){
 
 		if (APP_STATE.APP_PATCHES.length > currentPatchIdx) {
 			currentPatchIdx++;
-			refresh(function(){
-				render();
-			});
+			refresh();
 		}
 
 	});
@@ -766,9 +702,7 @@ $(document).ready(function(){
 
 		if (currentPatchIdx > 0) {
 			currentPatchIdx--;
-			refresh(function(){
-				render();
-			});
+			refresh();
 		}
 
 	});
@@ -777,9 +711,7 @@ $(document).ready(function(){
 
 		if (APP_STATE.APP_PATCHES[num]) {
 			currentPatchIdx = num;	
-			refresh(function(){
-				render();
-			});
+			refresh();
 		}
 
 	});
@@ -902,26 +834,24 @@ $(document).ready(function(){
 				ccString = "dev \"" + nm + '\" cc ' + controller + " " + value;
 			}
 
-			if(nm) sendMidi(ccString, function(printthis){
-				printer(JSON.stringify(printthis));
-			});
+			if(nm) 
+
+			ajaxPost('api/sendmidi', { sendmidistring: ccString }, function(sendMidiReply){
+				printer(JSON.stringify(sendMidiReply));
+			});	
 
 		} else if ($(".footpn").is(":checked")){
 
 			if (sid == "foot1"){
 				if (currentPatchIdx > 0) {
 					currentPatchIdx--;
-					refresh(function(){
-						render();
-					});
+					refresh();
 				}
 			} 
 			else if (sid == "foot2"){
 				if (APP_STATE.APP_PATCHES.length > currentPatchIdx) {
 					currentPatchIdx++;
-					refresh(function(){
-						render();
-					});
+					refresh();
 
 				}
 			}
@@ -972,28 +902,7 @@ $(document).ready(function(){
 
 	});
 
+	refresh();		
 
-	/* Refresh-Only if coming from config */ 
-
-	showClientID = $.urlParam('showClientID');
-
-	cpi = $.urlParam('currentPatchIdx');
-	
-	if (cpi & cpi != 0){
-
-		currentPatchIdx = cpi;
-
-		loadAppTemp(function(state){
-			APP_STATE = state;
-			render();
-		});
-
-	} else {
-
-		refresh(function(){
-			render();
-		});		
-
-	}
 
 });

@@ -1,65 +1,4 @@
 {
-  "APP_CONNECTIONS": {
-    "alsaClients": {
-      "USB MIDI cable": "20",
-      "USB MidiKliK Build-1101": "24",
-      "UM-ONE": "28"
-    },
-    "alsaDevices": {
-      "20:0": {
-        "alsaClientID": "20",
-        "alsaClientName": "USB MIDI cable",
-        "alsaClientNameID": "USB MIDI cable_20",
-        "alsaClientPID": "0",
-        "alsaClientIsFilter": "false",
-        "alsaDeviceNum": "0",
-        "alsaDeviceID": "20:0",
-        "alsaDeviceName": "USB MIDI cable MIDI 1",
-        "alsaDeviceNameID": "USB MIDI cable MIDI 1",
-        "alsaDeviceOriginalName": "USB MIDI cable MIDI 1",
-        "alsaDeviceIO": "IO"
-      },
-      "20:1": {
-        "alsaClientID": "20",
-        "alsaClientName": "USB MIDI cable",
-        "alsaClientNameID": "USB MIDI cable_20",
-        "alsaClientPID": "0",
-        "alsaClientIsFilter": "false",
-        "alsaDeviceNum": "1",
-        "alsaDeviceID": "20:1",
-        "alsaDeviceName": "USB MIDI cable MIDI 2",
-        "alsaDeviceNameID": "USB MIDI cable MIDI 2",
-        "alsaDeviceOriginalName": "USB MIDI cable MIDI 2",
-        "alsaDeviceIO": "IO"
-      },
-      "24:0": {
-        "alsaClientID": "24",
-        "alsaClientName": "USB MidiKliK Build-1101",
-        "alsaClientNameID": "USB MidiKliK Build-1101_24",
-        "alsaClientPID": "0",
-        "alsaClientIsFilter": "false",
-        "alsaDeviceNum": "0",
-        "alsaDeviceID": "24:0",
-        "alsaDeviceName": "USB MidiKliK Build-1101 MIDI 1",
-        "alsaDeviceNameID": "USB MidiKliK Build-1101 MIDI 1",
-        "alsaDeviceOriginalName": "USB MidiKliK Build-1101 MIDI 1",
-        "alsaDeviceIO": "IO"
-      },
-      "28:0": {
-        "alsaClientID": "28",
-        "alsaClientName": "UM-ONE",
-        "alsaClientNameID": "UM-ONE_28",
-        "alsaClientPID": "0",
-        "alsaClientIsFilter": "false",
-        "alsaDeviceNum": "0",
-        "alsaDeviceID": "28:0",
-        "alsaDeviceName": "UM-ONE MIDI 1",
-        "alsaDeviceNameID": "UM-ONE MIDI 1",
-        "alsaDeviceOriginalName": "UM-ONE MIDI 1",
-        "alsaDeviceIO": "IO"
-      }
-    }
-  },
   "APP_PATCHES": [
     "TEMP.json",
     "Zero.json",
@@ -265,5 +204,67 @@
         "outputName": "Back DIN"
       }
     }
-  }
+  },
+  "APP_CONNECTIONS": {
+    "alsaClients": {
+      "USB MIDI cable": "20",
+      "USB MidiKliK Build-1101": "24",
+      "UM-ONE": "28"
+    },
+    "alsaDevices": {
+      "20:0": {
+        "alsaClientID": "20",
+        "alsaClientName": "USB MIDI cable",
+        "alsaClientNameID": "USB MIDI cable_20",
+        "alsaClientPID": "0",
+        "alsaClientIsFilter": "false",
+        "alsaDeviceNum": "0",
+        "alsaDeviceID": "20:0",
+        "alsaDeviceName": "USB MIDI cable MIDI 1",
+        "alsaDeviceNameID": "USB MIDI cable MIDI 1",
+        "alsaDeviceOriginalName": "USB MIDI cable MIDI 1",
+        "alsaDeviceIO": "IO"
+      },
+      "20:1": {
+        "alsaClientID": "20",
+        "alsaClientName": "USB MIDI cable",
+        "alsaClientNameID": "USB MIDI cable_20",
+        "alsaClientPID": "0",
+        "alsaClientIsFilter": "false",
+        "alsaDeviceNum": "1",
+        "alsaDeviceID": "20:1",
+        "alsaDeviceName": "USB MIDI cable MIDI 2",
+        "alsaDeviceNameID": "USB MIDI cable MIDI 2",
+        "alsaDeviceOriginalName": "USB MIDI cable MIDI 2",
+        "alsaDeviceIO": "IO"
+      },
+      "24:0": {
+        "alsaClientID": "24",
+        "alsaClientName": "USB MidiKliK Build-1101",
+        "alsaClientNameID": "USB MidiKliK Build-1101_24",
+        "alsaClientPID": "0",
+        "alsaClientIsFilter": "false",
+        "alsaDeviceNum": "0",
+        "alsaDeviceID": "24:0",
+        "alsaDeviceName": "USB MidiKliK Build-1101 MIDI 1",
+        "alsaDeviceNameID": "USB MidiKliK Build-1101 MIDI 1",
+        "alsaDeviceOriginalName": "USB MidiKliK Build-1101 MIDI 1",
+        "alsaDeviceIO": "IO"
+      },
+      "28:0": {
+        "alsaClientID": "28",
+        "alsaClientName": "UM-ONE",
+        "alsaClientNameID": "UM-ONE_28",
+        "alsaClientPID": "0",
+        "alsaClientIsFilter": "false",
+        "alsaDeviceNum": "0",
+        "alsaDeviceID": "28:0",
+        "alsaDeviceName": "UM-ONE MIDI 1",
+        "alsaDeviceNameID": "UM-ONE MIDI 1",
+        "alsaDeviceOriginalName": "UM-ONE MIDI 1",
+        "alsaDeviceIO": "IO"
+      }
+    }
+  },
+  "APP_TEMP": "PI Temp: 48.2'C\n"
 }

@@ -1,0 +1,68 @@
+.grid { 
+	margin:1em auto; 
+	border-collapse:collapse 
+}
+
+.grid td {
+    cursor:pointer;
+    width:30px; height:30px;
+    border:1px solid #ccc;
+    text-align:center;
+    font-family:sans-serif; font-size:13px
+}
+
+.grid td.clicked {
+    background-color:yellow;
+    font-weight:bold; color:red;
+}
+
+.space-evenly { 
+  justify-content: space-evenly; 
+}
+
+.flex-start { 
+  justify-content: flex-start;
+}
+
+.cube-container{
+	display: flex;
+	position: relative;
+ 	width: 100%;
+ 	margin-left: 120px
+}
+
+.cube-container-vert{
+	display: flex;
+	flex-direction: column;
+	position: relative;
+ 	height: 100%;
+ 	max-width: 120px;
+ 	min-width: 120px;
+}
+
+
+.cube {
+
+    width: 100px;
+
+    background: darkgreen;
+    border: 2px solid black;
+	border-radius: 10px;
+
+	padding: 5px;
+	margin: 2px;
+	
+    font-size: 12px;	
+	font-weight: bold;
+    text-align: center;
+    color: white;
+
+}
+
+.cube-vert {
+    height: 75px;
+}
+
+.cube-horiz {
+    height: 100px;
+}

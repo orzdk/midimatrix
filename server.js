@@ -1,4 +1,3 @@
-
 var express = require('express');
 var http = require("http");
 var fs = require("fs");
@@ -33,7 +32,7 @@ String.prototype.replaceAll = function(search, replace) {
     var that = this;
     return that.replace(new RegExp(search, 'g'), replace);
 
-}
+};
 
 Array.prototype.remove = function() {
 
@@ -84,6 +83,8 @@ socket.on("connection", function (client) {
 		});
 
 	}
+
+	/* API */
 
 	parseConnectionList = function(data, data2, callback){
 
@@ -271,6 +272,68 @@ socket.on("connection", function (client) {
 
 	}
 
+	getPatchList = function(callback){
+
+		dir = '/home/pi/midimatrix/patches/';
+
+		fs.readdir(dir, (err, files) => {
+		   callback(files);
+		});
+
+	}
+
+	getScriptDefinitions = function(callback){
+
+		file = "/home/pi/midimatrix/scripts/index.json";
+
+		fs.readFile(file, function(err, buf) {
+		 	callback(JSON.parse(buf.toString()));
+		});
+
+	}
+
+	getUnits = function(callback){
+
+		file = "/home/pi/midimatrix/scripts/indexunits.json";
+
+		fs.readFile(file, function(err, buf) {
+		  callback(JSON.parse(buf.toString()));
+		});
+
+	}
+
+	gettranslations = function(callback){
+
+		file = "/home/pi/midimatrix/patches/translations.json";
+
+		fs.readFile(file, function(err, buf) {
+		  callback(JSON.parse(buf.toString()));
+		});
+
+	}
+
+	getRunningScriptFiles = function(callback){
+
+		var nameOnly = [];
+
+		for (var i=0;i<running_scripts.length;i++){
+			nameOnly.push(running_scripts[i].name);
+		}
+		
+		callback(nameOnly);
+
+	}
+
+	getTemperature = function(callback){
+
+		var cmd1 = '/opt/vc/bin/vcgencmd measure_temp';
+
+		executeShellCommand(cmd1, function(temp){
+			callback(temp.stdout.replace("temp=","PI Temp: "));			
+		});
+
+	}
+
 	/* Config Page */
 
 	apiRoutes.post('/savescriptdefinitions', function(req, res){	
@@ -285,14 +348,7 @@ socket.on("connection", function (client) {
 
 	});
 
-	apiRoutes.post('/loadscriptdefinitions', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/scripts/index.json";
-		fs.readFile(fn, function(err, buf) {
-		  res.json(JSON.parse(buf.toString()));
-		});
 
-	});
 
 	apiRoutes.post('/savescriptfile', function(req, res){	
 
@@ -305,12 +361,34 @@ socket.on("connection", function (client) {
 
 	});
 
+
+	/* NEW NEW NEW */
+
+	apiRoutes.post('/loadscriptdefinitions', function(req, res){	
+		
+		getScriptDefinitions(function(scriptDefinitions){
+			res.json(scriptDefinitions);
+		});
+ 
+	});
+
 	apiRoutes.post('/loadunits', function(req, res){	
 		
 		fn = "/home/pi/midimatrix/scripts/indexunits.json";
 
 		fs.readFile(fn, function(err, buf) {
 		  res.json(JSON.parse(buf.toString()));
+		});
+
+	});
+
+	console.log('bah');
+	apiRoutes.post('/loadscriptsdefsandunits', function(req, res){	
+		
+		getScriptDefinitions(function(scriptDefs){
+			getUnits(function(units){
+				res.json({scriptDefs, units});
+			});
 		});
 
 	});
@@ -332,23 +410,18 @@ socket.on("connection", function (client) {
 
 	apiRoutes.post('/gettranslations', function(req, res){	
 
-		fn = "/home/pi/midimatrix/patches/translations.json";
-		fs.readFile(fn, function(err, buf) {
-		  res.json(JSON.parse(buf.toString()));
+		gettranslations(function(trans){
+		  res.json(trans);
 		});
 
 	});
 
 	apiRoutes.post('/getrunningscripts', function(req, res){	
 
-		var nameOnly = [];
-
-		for (var i=0;i<running_scripts.length;i++){
-			nameOnly.push(running_scripts[i].name);
-		}
+		getRunningScriptFiles(function(runningScripts){
+			res.json(runningScripts);
+		});
 		
-		res.json(nameOnly);
-
 	});
 
 	apiRoutes.post('/savepatch', function(req, res){	
@@ -389,8 +462,8 @@ socket.on("connection", function (client) {
 
 	apiRoutes.post('/getpatchfilelist', function(req, res){	
 
-		fs.readdir('/home/pi/midimatrix/patches/', (err, files) => {
-		   res.json(files);
+		getPatchList(function(patchList){
+		   res.json(patchList);
 		});
 
 	});
@@ -511,7 +584,42 @@ socket.on("connection", function (client) {
 
 	/* Operations  - Connections */
 
-	apiRoutes.post('/getdevices', function(req, res){	
+	apiRoutes.post('/getsystemstate', function(req,res){
+
+		getPatchList(function(patches){
+			getScriptDefinitions(function(scripts){
+				getRunningScriptFiles(function(runningScripts){		
+					getTemperature(function(temp){
+						gettranslations(function(trans){
+							executeShellCommand('sudo aconnect -l', function(aconnectReply){
+								executeShellCommand('sudo amidi -l', function(amidiReply){	
+									parseConnectionList(aconnectReply, amidiReply, function(alsa){
+										
+										returnObject = {
+											APP_PATCHES: patches,
+											APP_SCRIPTS: scripts,
+											APP_RUNNING_SCRIPTS: runningScripts,
+											APP_SETTINGS : {
+												translations: trans
+											},
+											APP_CONNECTIONS: alsa,
+											APP_TEMP: temp
+										}
+
+										res.json(returnObject);
+
+									});
+								});
+							});
+						});
+					});
+				});
+			});
+		});
+	});
+
+
+	apiRoutes.post('/getmididevices', function(req, res){	
 
 		executeShellCommand('sudo aconnect -l', function(shellReply){
 			executeShellCommand('sudo amidi -l', function(shellReply2){	
@@ -580,12 +688,8 @@ socket.on("connection", function (client) {
 
 	apiRoutes.post('/gettemp', function(req, res){	
 
-		var cmd1 = '/opt/vc/bin/vcgencmd measure_temp';
-
-		running_scripts =  [];
-
-		executeShellCommand(cmd1, function(shellReply){
-			res.json( {r1: shellReply} );			
+		getTemperature(function(temp){
+			res.json({temp: temp});
 		});
 
 	});

@@ -1,19 +1,3 @@
-function loadScriptDefinitions(callback){
-
-	$.ajax({
-	  	type: "POST",
-	  	url: "api/loadscriptdefinitions",	  	
-	  	data: { },
-	  	success: function(data){
-	  		scripts = data;
-	  		if (callback) callback(data);
-	  	}, 
-	  	error: function(errr){
-	  		if (callback) callback(errr);
-	  	}
-	});
-
-}
 
 Array.prototype.remove = function() {
     var what, a = arguments, L = a.length, ax;

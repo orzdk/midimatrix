@@ -386,8 +386,8 @@ td{
 }
 
 .script-bggold{
-	border: none;
-	background-color: #ffffef
+	border: 1px solid black;
+	background-color: #eeee99;
 }
 
 .sysexdata{

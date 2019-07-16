@@ -282,7 +282,7 @@ function renderUnitDefinitions(){
 	$("#unit-definition-list").append("<br><br><div id='addscript' onclick='addScript()' class='mm-but  mm-but-short mm-but-function'>++</div>");
 	$("#unit-definition-list").append("<div id='parsescript' onclick='parseScriptsDefinition()' class='mm-but mm-but-short mm-but-function'>PARSE</div>");
 	$("#unit-definition-list").append("<div id='savescript' onclick='saveScriptsDefinition()' class='mm-but mm-but-short mm-but-function'>SAVE</div>");
-	$("#unit-definition-list").append("<a href='/?currentPatchIdx=" + $.urlParam('currentPatchIdx') + "' class='mm-but mm-but-short mm-but-connection'>SCENE</a>");
+	$("#unit-definition-list").append("<a href='/' class='mm-but mm-but-short mm-but-connection'>SCENE</a>");
 
 }
 
@@ -325,17 +325,11 @@ function renderscripts(){
 
 }
 
-loadUnits(function(units){
-	loadScriptDefinitions(function(_scripts){
+ajaxPost('api/loadscriptsdefsandunits', null, function(obj){
+	UNITS = obj.units;
+	scripts = obj.scriptDefs;
 
-		UNITS = units;
-		scripts = _scripts;
-
-		renderUnitDefinitions();
-		renderscripts();
-
-	});
-
+	renderUnitDefinitions();
+	renderscripts();
 });
-
 
