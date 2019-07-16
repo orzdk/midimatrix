@@ -1,58 +1,38 @@
 {
-  "USB MIDI cable MIDI 1": {
-    "inputName": "Left DIN",
-    "outputName": "Left DIN"
-  },
-  "UM-ONE MIDI 1": {
-    "inputName": "Back DIN",
-    "outputName": "Back DIN"
-  },
-  "SQ-1 MIDI 1": {
-    "inputName": "SQ-1 #1",
-    "outputName": "SQ-1 #1"
-  },
-  "SQ-1 MIDI 2": {
-    "inputName": "SQ-1 MIDI 2undefined",
-    "outputName": "SQ-1 #2"
-  },
-  "USB MidiKliK Build-1101 MIDI 1": {
-    "inputName": "Left Jack",
-    "outputName": "Left Jack"
-  },
-  "USB MIDI cable MIDI 2": {
-    "inputName": "Left DIN",
-    "outputName": "Left DIN"
-  },
-  "out_1": {
-    "inputName": "out_1undefined",
-    "outputName": "Print"
-  },
-  "in_1": {
-    "inputName": "Print",
-    "outputName": "in_1undefined"
-  },
   "out_1print_mididings": {
-    "inputName": "out_1print_mididingsundefined",
+    "inputName": "out_1_print_mididingsundefined",
     "outputName": "Print"
   },
   "in_1print_mididings": {
     "inputName": "Print2",
-    "outputName": "in_1print_mididingsundefined"
+    "outputName": "in_1_print_mididingsundefined"
   },
-  "USB MIDI cable MIDI 1USB MIDI cable": {
+  "USB MIDI cable MIDI 1_USB MIDI cable": {
     "inputName": "Left DIN",
     "outputName": "Left DIN"
   },
-  "USB MIDI cable MIDI 2USB MIDI cable": {
+  "USB MIDI cable MIDI 2_USB MIDI cable": {
     "inputName": "Left DIN",
     "outputName": "Left DIN"
   },
-  "USB MidiKliK Build-1101 MIDI 1USB MidiKliK Build-1101": {
+  "USB MidiKliK Build-1101 MIDI 1_USB MidiKliK Build-1101": {
     "inputName": "Left Jack",
     "outputName": "Left Jack"
   },
-  "UM-ONE MIDI 1UM-ONE": {
+  "UM-ONE MIDI 1_UM-ONE": {
     "inputName": "Back DIN",
     "outputName": "Back DIN"
+  },
+  "out_1_ctos_mididings": {
+    "inputName": "out_1_ctos_mididingsundefined",
+    "outputName": "ctos"
+  },
+  "in_1_noclock_mididings": {
+    "inputName": "nc",
+    "outputName": "in_1_noclock_mididingsundefined"
+  },
+  "out_1_noclock_mididings": {
+    "inputName": "out_1_noclock_mididingsundefined",
+    "outputName": "hest"
   }
 }

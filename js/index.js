@@ -1,3 +1,4 @@
+
 var selectedFrom = "";
 var selectedFromFoot = false;
 var selectedFromScript = "";
@@ -320,14 +321,11 @@ renameDeviceConnection = function(){
 
 	sel = setToRename != "" ? setToRename : selectedFrom;
 
-	selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaDeviceName + APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaClientName;
-
-	inputName = $("#inputName").val();
-	outputName = $("#outputName").val();
+	selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[sel].alsaDeviceClientName;
 
 	APP_STATE.APP_SETTINGS.translations[selectedName] = {}
-	APP_STATE.APP_SETTINGS.translations[selectedName].inputName = inputName;
-	APP_STATE.APP_SETTINGS.translations[selectedName].outputName = outputName;
+	APP_STATE.APP_SETTINGS.translations[selectedName].inputName = $("#inputName").val();
+	APP_STATE.APP_SETTINGS.translations[selectedName].outputName = $("#outputName").val();
 	
 	$(".renamecontrol").addClass("mm-hidden");
 	$(".stopcontrol").addClass("mm-hidden");
@@ -342,7 +340,7 @@ renameDeviceConnection = function(){
 disconnectConnection = function(from, to){
 
 	disconnectDevices(from, to, function(){
-		loadMidiDevices(function(midiDevices){
+		ajaxPost('api/getmididevices', null, function(midiDevices){
 			APP_STATE.APP_CONNECTIONS = midiDevices;
 			render();
 		});		
@@ -381,8 +379,8 @@ renderDeviceButtons = function(){
 			classs = "mm-but mm-but-filter";
 		}
 			
-  		outputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "outputName", alsaDevice.alsaClientName);
-  		inputName = translatedName(alsaDevice.alsaDeviceName + alsaDevice.alsaClientName, "inputName", alsaDevice.alsaClientName);
+  		outputName = translatedName(alsaDevice.alsaDeviceClientName, "outputName", alsaDevice.alsaClientName);
+  		inputName = translatedName(alsaDevice.alsaDeviceClientName, "inputName", alsaDevice.alsaClientName);
 
 		inputClass  = (alsaDevice.alsaDeviceIO.indexOf("I") > -1 && hideInput == false) ? classs : "mm-but-disabled";
 		outputClass = (alsaDevice.alsaDeviceIO.indexOf("O") > -1 && hideOutput == false) ? classs : "mm-but-disabled";
@@ -425,9 +423,9 @@ renderConnections = function(){
 		iclasss = connection.to.alsaDeviceNameID.indexOf("in_") > -1 ? "mm-but mm-but-filter" : "mm-but mm-but-connection" + " uc " + unitColors[connection.to.alsaDeviceName];
 
   		$table.append("<tr>");
-  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceName + connection.from.alsaClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + translatedName(connection.from.alsaDeviceName + connection.from.alsaClientName,"outputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + "'></td>")
   		$table.append("<td><input onclick='setToScript(\"" + connection.connectionUID + "\")' type='button' class='mm-but mm-but-action' value='DISCO'></td>")
-  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceName + connection.to.alsaClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + translatedName(connection.to.alsaDeviceName + connection.to.alsaClientName,"inputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + "'></td>")
   		$table.append("</tr>");
 
 	});
@@ -544,15 +542,12 @@ hardReset = function(){
 
 }
 
-
-stopFilter2 = function(){
+stopFilter = function(){
 
 	pleaseWait();
 	cancelRename();
 
-	pid = Number(selectedPID);
-
-	stopFilterFile({pid:pid}, function(){
+	stopFilterFile({pid:Number(selectedPID)}, function(){
 		refresh();
 	});
 	
@@ -568,10 +563,9 @@ holdToRename = function(realA){
 
 	holdRenameTimer = setTimeout(function(){
 
-
 		isFilter = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientIsFilter
 		selectedPID = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientPID;
-		selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceName + APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientName;
+		selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceClientName;
 
 		outputName = translatedName(selectedName,"outputName");
   		inputName = translatedName(selectedName,"inputName");
@@ -591,6 +585,14 @@ holdToRename = function(realA){
 
 }
 
+cancelRename = function(){
+
+	$(".renamecontrol").addClass("mm-hidden");
+	$(".stopcontrol").addClass("mm-hidden");
+	$(".setfrom").removeClass("mm-but-selected");
+
+}
+
 pleaseWait = function(){
 
 	$("#pleaseWait").removeClass("mm-hidden");
@@ -600,14 +602,6 @@ pleaseWait = function(){
 thankYou = function(){
 
     $("#pleaseWait").addClass("mm-hidden");
-
-}
-
-cancelRename = function(){
-
-	$(".renamecontrol").addClass("mm-hidden");
-	$(".stopcontrol").addClass("mm-hidden");
-	$(".setfrom").removeClass("mm-but-selected");
 
 }
 
@@ -650,6 +644,7 @@ $(document).ready(function(){
 
 	var socket = io.connect(ip);
 
+
 	socket.on("foot-pedal-1", function(msg) {
 		
 		blink("foot1_fire", 250);
@@ -685,6 +680,7 @@ $(document).ready(function(){
 	});
 
 	socket.on("usb-update", function(msg, d) {
+
 		refresh();
 	
 	});

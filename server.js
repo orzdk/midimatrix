@@ -219,6 +219,9 @@ socket.on("connection", function (client) {
 									alsaDeviceName: alsaDeviceName,					/* UM-ONE MIDI 1		*/
 									alsaDeviceNameID: alsaDeviceName,				/* UM-ONE MIDI 1 (1)	*/														
 									alsaDeviceOriginalName: alsaDeviceName,			/* UM-ONE MIDI 1		*/
+
+									alsaDeviceClientName: alsaDeviceName + "_" + alsaClientName, 
+			
 									alsaDeviceIO: getIO(alsaDeviceName),
 
 	 								connectingTo: [] 
@@ -382,7 +385,7 @@ socket.on("connection", function (client) {
 
 	});
 
-	console.log('bah');
+
 	apiRoutes.post('/loadscriptsdefsandunits', function(req, res){	
 		
 		getScriptDefinitions(function(scriptDefs){
