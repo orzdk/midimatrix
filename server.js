@@ -1,9 +1,10 @@
+
 var express = require('express');
 var http = require("http");
 var fs = require("fs");
 var bodyParser = require('body-parser');
-var fileUpload  = require('express-fileupload');
 var async = require('async');
+var cors = require('cors')
 const { exec } = require('child_process');
 const { spawn }  = require("node-pty");
 
@@ -13,9 +14,8 @@ var app = express();
 
 app.use(express.static(__dirname));
 app.use(bodyParser.json());    
-app.use(bodyParser.urlencoded({extended: true}));    
-
-app.use(fileUpload());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cors());
 
 var server = app.listen(port);
 var socket = require("socket.io").listen(server);
@@ -32,7 +32,7 @@ String.prototype.replaceAll = function(search, replace) {
     var that = this;
     return that.replace(new RegExp(search, 'g'), replace);
 
-};
+}
 
 Array.prototype.remove = function() {
 
@@ -45,573 +45,535 @@ Array.prototype.remove = function() {
     }
     return this;
 
-};
-
-socket.on("connection", function (client) {
+}
 	
-	/* Shell */
+spawnShellCommand = function(cmd, callback){
 
-	callHome = function(m){
+	a = spawn('python', ["-u",cmd] );
 
-		socket.sockets.emit("printer", m);
+	a.on("data", function(m){
+		callHome(m);
+	});
 
-	}
+	callback(a);
 
-	spawnShellCommand = function(cmd, callback){
+}
 
-		a = spawn('python', ["-u",cmd] );
+executeShellCommand = function(cmd, callback){
 
-		a.on("data", function(m){
-			callHome(m);
-		});
+	var a = exec(cmd, function(err, stdout, stderr){
 
-		callback(a);
+		reply = {
+			stdout: stdout, 
+			stderr: stderr
+		}
 
-	}
+    	callback(reply);
 
-	executeShellCommand = function(cmd, callback){
+	});
 
-		var a = exec(cmd, function(err, stdout, stderr){
+}
 
-			reply = {
-				stdout: stdout, 
-				stderr: stderr
-			}
+parseConnectionList = function(data, data2, callback){
 
-	    	callback(reply);
+	var connections = [];
+	var clientNames = [];
+	var alsaClientNames = [];		
+	var connectionsObj = {};
+	var midiinfoobj = {};		
+	var alsaClients = {};
+	var line = "";
+	var clientID = "";
+	var clientName = "";
+	var clientPortNum = "";
+	var clientConnectionID = "";
+	var alsaClientID = "";
+	var alsaClientName = "";
+	var alsaClientNameID = "";
+	var clientFound = false;	
+	var currentdevice = undefined;
+	var alsaClientLineFound = false;
+	var lines = data.stdout.split('\n');
+	var lines2 = data2.stdout.split('\n');
 
-		});
+	function getIO(alsaDeviceName){
 
-	}
+		if (alsaDeviceName.indexOf("out_") > -1) {
+			return "O";
+		}
+		else if (alsaDeviceName.indexOf("in_") > -1) {
+			return "I";
+		}
+		else {
 
-	/* API */
-
-	parseConnectionList = function(data, data2, callback){
-
-		var connections = [];
-		var clientNames = [];
-		var alsaClientNames = [];		
-		var connectionsObj = {};
-		var midiinfoobj = {};		
-		var alsaClients = {};
-		var line = "";
-		var clientID = "";
-		var clientName = "";
-		var clientPortNum = "";
-		var clientConnectionID = "";
-		var alsaClientID = "";
-		var alsaClientName = "";
-		var alsaClientNameID = "";
-		var clientFound = false;	
-		var currentdevice = undefined;
-		var alsaClientLineFound = false;
-		var lines = data.stdout.split('\n');
-		var lines2 = data2.stdout.split('\n');
-
-		function getIO(alsaDeviceName){
-
-			if (alsaDeviceName.indexOf("out_") > -1) {
-				return "O";
-			}
-			else if (alsaDeviceName.indexOf("in_") > -1) {
-				return "I";
-			}
-			else {
-
-				for (var c=0; c<lines2.length; c++){
-					line = lines2[c];
-					if (line.indexOf(alsaDeviceName) > -1){
-						return line.split("  ")[0];
-					}
+			for (var c=0; c<lines2.length; c++){
+				line = lines2[c];
+				if (line.indexOf(alsaDeviceName) > -1){
+					return line.split("  ")[0];
 				}
 			}
-
 		}
 
-		function countIdenticals(lf){
+	}
 
-			var i = 0;
+	function countIdenticals(lf){
 
-	    	Object.keys(midiinfoobj).forEach(function(a,b) {
-	    		if (midiinfoobj[a].alsaDeviceNameID == lf) i++;
-			});
+		var i = 0;
 
-	    	return i;
-		
-		}
+    	Object.keys(midiinfoobj).forEach(function(a,b) {
+    		if (midiinfoobj[a].alsaDeviceNameID == lf) i++;
+		});
 
-		function rename(lf){
+    	return i;
+	
+	}
 
-			var i = 1;
+	function rename(lf){
 
-	    	Object.keys(midiinfoobj).forEach(function(a,b) {
-	    		if (midiinfoobj[a].alsaDeviceOriginalName == lf) {
-	    			midiinfoobj[a].alsaDeviceNameID = midiinfoobj[a].alsaDeviceNameID + " (" + i + ")";
-	    			i++;
-	    		}
-			});
+		var i = 1;
 
-		}
+    	Object.keys(midiinfoobj).forEach(function(a,b) {
+    		if (midiinfoobj[a].alsaDeviceOriginalName == lf) {
+    			midiinfoobj[a].alsaDeviceNameID = midiinfoobj[a].alsaDeviceNameID + " (" + i + ")";
+    			i++;
+    		}
+		});
 
-		for (var c=0; c<lines.length; c++){
+	}
 
-			line = lines[c];
+	for (var c=0; c<lines.length; c++){
 
-			if (line.indexOf("Connected From") == -1 && line != "") {
+		line = lines[c];
 
-				if (line.indexOf("[type=kernel,card=") > -1 || line.indexOf("[type=user,pid=") > -1){
+		if (line.indexOf("Connected From") == -1 && line != "") {
 
-					alsaClientID = line.split(":")[0].substring(7,line.split(":")[0].length);
-					alsaClientPID = line.indexOf("pid") > 1 ? line.split("[")[1].split(",")[1].split("=")[1].replace("]","") : 0;
-					alsaClientName = line.split("'")[1];
-					alsaClientNameID = alsaClientName + "_" + alsaClientID;
-					alsaClientIsFilter = line.indexOf("[type=user,pid=") > -1;
+			if (line.indexOf("[type=kernel,card=") > -1 || line.indexOf("[type=user,pid=") > -1){
 
-					alsaClients[alsaClientName] = alsaClientID;
-					alsaClientLineFound = true;
+				alsaClientID = line.split(":")[0].substring(7,line.split(":")[0].length);
+				alsaClientPID = line.indexOf("pid") > 1 ? line.split("[")[1].split(",")[1].split("=")[1].replace("]","") : 0;
+				alsaClientName = line.split("'")[1];
+				alsaClientNameID = alsaClientName + "_" + alsaClientID;
+				alsaClientIsFilter = line.indexOf("[type=user,pid=") > -1;
 
-				} else {
+				alsaClients[alsaClientName] = alsaClientID;
+				alsaClientLineFound = true;
 
-					if (line.indexOf("client") > -1){
+			} else {
 
-						alsaClientLineFound = false;
-			  			currentDevice = undefined;
+				if (line.indexOf("client") > -1){
 
-					} 
-					else {
+					alsaClientLineFound = false;
+		  			currentDevice = undefined;
 
-						if (alsaClientLineFound == true){
+				} 
+				else {
 
-							if (line.indexOf("Connecting To") > -1) { 
+					if (alsaClientLineFound == true){
 
-								connectingTo1 = line.split("To: ")[1].trim();
+						if (line.indexOf("Connecting To") > -1) { 
 
-								if (connectingTo1.indexOf(",") > -1){
+							connectingTo1 = line.split("To: ")[1].trim();
 
-									connectingTo2 = connectingTo1.split(", ");
-									for (i=0; i<connectingTo2.length; i++){ 
-										currentDevice.connectingTo.push(connectingTo2[i].trim()); 
-									};
+							if (connectingTo1.indexOf(",") > -1){
 
-								} else {
-									currentDevice.connectingTo.push(connectingTo1); 
-								}
-
-							} 
-
-							else {
-
-								alsaDeviceNum = line.split("'")[0].trim();
-								alsaDeviceName = line.split("'")[1].trim();
-
-	                            alsaDeviceID = alsaClientID + ":" + alsaDeviceNum;
-
-								midiinfoobj[alsaDeviceID] = { 
-									
-									alsaClientID: alsaClientID, 					/* 32					*/	
-									alsaClientName: alsaClientName,					/* UM-ONE				*/
-									alsaClientNameID: alsaClientNameID,				/* UM-ONE_32			*/								
-									alsaClientPID: alsaClientPID, 					/* 28545				*/	
-									alsaClientIsFilter: alsaClientIsFilter,			/* False / True			*/
-																	
-									alsaDeviceNum: alsaDeviceNum,					/* 0					*/																
-									alsaDeviceID: alsaDeviceID, 					/* 32:0					*/
-									alsaDeviceName: alsaDeviceName,					/* UM-ONE MIDI 1		*/
-									alsaDeviceNameID: alsaDeviceName,				/* UM-ONE MIDI 1 (1)	*/														
-									alsaDeviceOriginalName: alsaDeviceName,			/* UM-ONE MIDI 1		*/
-
-									alsaDeviceClientName: alsaDeviceName + "_" + alsaClientName, 
-			
-									alsaDeviceIO: getIO(alsaDeviceName),
-
-	 								connectingTo: [] 
+								connectingTo2 = connectingTo1.split(", ");
+								for (i=0; i<connectingTo2.length; i++){ 
+									currentDevice.connectingTo.push(connectingTo2[i].trim()); 
 								};
 
-								if (countIdenticals(alsaDeviceName) > 1){
-	                        		rename(alsaDeviceName);
-	                        	}
-
-								currentDevice = midiinfoobj[alsaDeviceID];
-
+							} else {
+								currentDevice.connectingTo.push(connectingTo1); 
 							}
+
+						} 
+
+						else {
+
+							alsaDeviceNum = line.split("'")[0].trim();
+							alsaDeviceName = line.split("'")[1].trim();
+
+                            alsaDeviceID = alsaClientID + ":" + alsaDeviceNum;
+
+							midiinfoobj[alsaDeviceID] = { 
+								
+								alsaClientID: alsaClientID, 					/* 32					*/	
+								alsaClientName: alsaClientName,					/* UM-ONE				*/
+								alsaClientNameID: alsaClientNameID,				/* UM-ONE_32			*/								
+								alsaClientPID: alsaClientPID, 					/* 28545				*/	
+								alsaClientIsFilter: alsaClientIsFilter,			/* False / True			*/
+																
+								alsaDeviceNum: alsaDeviceNum,					/* 0					*/																
+								alsaDeviceID: alsaDeviceID, 					/* 32:0					*/
+								alsaDeviceName: alsaDeviceName,					/* UM-ONE MIDI 1		*/
+								alsaDeviceNameID: alsaDeviceName,				/* UM-ONE MIDI 1 (1)	*/														
+								alsaDeviceOriginalName: alsaDeviceName,			/* UM-ONE MIDI 1		*/
+
+								alsaDeviceClientName: alsaDeviceName + "_" + alsaClientName, 
+		
+								alsaDeviceIO: getIO(alsaDeviceName),
+
+ 								connectingTo: [] 
+							};
+
+							if (countIdenticals(alsaDeviceName) > 1){
+                        		rename(alsaDeviceName);
+                        	}
+
+							currentDevice = midiinfoobj[alsaDeviceID];
+
 						}
 					}
 				}
 			}
 		}
+	}
 
-		Object.keys(midiinfoobj).forEach(function(a) {
+	Object.keys(midiinfoobj).forEach(function(a) {
 
-		  var b = midiinfoobj[a];
-		  
-			for (var i=0; i < b.connectingTo.length; i++){
+	  var b = midiinfoobj[a];
+	  
+		for (var i=0; i < b.connectingTo.length; i++){
 
-				point_to_id = b.connectingTo[i].trim();
+			point_to_id = b.connectingTo[i].trim();
 
-				if (midiinfoobj[point_to_id]){
+			if (midiinfoobj[point_to_id]){
 
-					from = midiinfoobj[a];
-					to = midiinfoobj[point_to_id];
+				from = midiinfoobj[a];
+				to = midiinfoobj[point_to_id];
 
-					connectionUID = from.alsaClientName.replaceAll(" ","_") + "~" + from.alsaDeviceNum + "+" + to.alsaClientName.replaceAll(" ","_") + "~" + to.alsaDeviceNum; 
-					connectionUUID = from.alsaClientNameID.replaceAll(" ","_") + "~" + from.alsaDeviceNum + "+" + to.alsaClientNameID.replaceAll(" ","_") + "~" + to.alsaDeviceNum; 
+				connectionUID = from.alsaClientName.replaceAll(" ","_") + "~" + from.alsaDeviceNum + "+" + to.alsaClientName.replaceAll(" ","_") + "~" + to.alsaDeviceNum; 
+				connectionUUID = from.alsaClientNameID.replaceAll(" ","_") + "~" + from.alsaDeviceNum + "+" + to.alsaClientNameID.replaceAll(" ","_") + "~" + to.alsaDeviceNum; 
 
-					connections.push({connectionUID,from,to});
-					connectionsObj[connectionUID] = {from,to}
-					
-				}	
-			}
-
-		});
-
-		rv = { 
-			alsaClients: alsaClients, 
-			alsaDevices: midiinfoobj, 
-			alsaDeviceConnections: connections,
-			alsaDeviceConnectionsObj: connectionsObj
+				connections.push({connectionUID,from,to});
+				connectionsObj[connectionUID] = {from,to}
+				
+			}	
 		}
-		
-		callback(rv);
 
+	});
+
+	rv = { 
+		alsaClients: alsaClients, 
+		alsaDevices: midiinfoobj, 
+		alsaDeviceConnections: connections,
+		alsaDeviceConnectionsObj: connectionsObj
 	}
+	
+	callback(rv);
 
-	getPatchList = function(callback){
+}
 
-		dir = '/home/pi/midimatrix/patches/';
+getPatchList = function(callback){
 
-		fs.readdir(dir, (err, files) => {
-		   callback(files);
-		});
+	dir = '/home/pi/midimatrix/patches/';
 
+	fs.readdir(dir, (err, files) => {
+	   callback(files);
+	});
+
+}
+
+getScriptDefinitions = function(callback){
+
+	file = "/home/pi/midimatrix/scripts/index.json";
+
+	fs.readFile(file, function(err, buf) {
+	 	callback(JSON.parse(buf.toString()));
+	});
+
+}
+
+getUnits = function(callback){
+
+	file = "/home/pi/midimatrix/scripts/indexunits.json";
+
+	fs.readFile(file, function(err, buf) {
+	  callback(JSON.parse(buf.toString()));
+	});
+
+}
+
+gettranslations = function(callback){
+
+	file = "/home/pi/midimatrix/patches/translations.json";
+
+	fs.readFile(file, function(err, buf) {
+	  callback(JSON.parse(buf.toString()));
+	});
+
+}
+
+getRunningScriptFiles = function(callback){
+
+	var nameOnly = [];
+
+	for (var i=0;i<running_scripts.length;i++){
+		nameOnly.push(running_scripts[i].name);
 	}
+	
+	callback(nameOnly);
 
-	getScriptDefinitions = function(callback){
+}
 
-		file = "/home/pi/midimatrix/scripts/index.json";
+getTemperature = function(callback){
 
-		fs.readFile(file, function(err, buf) {
-		 	callback(JSON.parse(buf.toString()));
+	var cmd1 = '/opt/vc/bin/vcgencmd measure_temp';
+
+	executeShellCommand(cmd1, function(temp){
+		callback(temp.stdout.replace("temp=","PI Temp: "));			
+	});
+
+}
+
+/* Config Page */
+
+apiRoutes.post('/savescriptdefinitions', function(req, res){	
+	
+	fn = "/home/pi/midimatrix/scripts/index.json";
+	fnc = JSON.stringify(req.body.scriptsDef, null, 2);
+
+	fs.writeFile(fn,fnc, function(err, data) {
+	  	if (err) console.log(err);
+	  	res.sendStatus(200);
+	});
+
+});
+
+apiRoutes.post('/savescriptfile', function(req, res){	
+
+	fn = '/home/pi/midimatrix/scripts/' + req.body.fileName + '.py';
+	fnc = req.body.fileScript;
+
+	fs.writeFile(fn,fnc, function(err, data) {
+	  	res.sendStatus(200);
+	});
+
+});
+
+apiRoutes.post('/loadscriptdefinitions', function(req, res){	
+	
+	getScriptDefinitions(function(scriptDefinitions){
+		res.json(scriptDefinitions);
+	});
+
+});
+
+apiRoutes.post('/loadunits', function(req, res){	
+	
+	fn = "/home/pi/midimatrix/scripts/indexunits.json";
+
+	fs.readFile(fn, function(err, buf) {
+	  res.json(JSON.parse(buf.toString()));
+	});
+
+});
+
+apiRoutes.post('/loadscriptsdefsandunits', function(req, res){	
+	
+	getScriptDefinitions(function(scriptDefs){
+		getUnits(function(units){
+			res.json({scriptDefs, units});
 		});
+	});
 
-	}
+});
 
-	getUnits = function(callback){
+/* Active Translations */
 
-		file = "/home/pi/midimatrix/scripts/indexunits.json";
+apiRoutes.post('/savetranslations', function(req, res){	
+	
+	fn = "/home/pi/midimatrix/patches/translations.json";
+	fnc = JSON.stringify(req.body.translations, null, 2);
 
-		fs.readFile(file, function(err, buf) {
-		  callback(JSON.parse(buf.toString()));
-		});
+	fs.writeFile(fn,fnc, function(err, data) {
+	  	if (err) console.log(err);
+	  	res.sendStatus(200);
+	});
 
-	}
+});
 
-	gettranslations = function(callback){
+apiRoutes.post('/gettranslations', function(req, res){	
 
-		file = "/home/pi/midimatrix/patches/translations.json";
+	gettranslations(function(trans){
+	  res.json(trans);
+	});
 
-		fs.readFile(file, function(err, buf) {
-		  callback(JSON.parse(buf.toString()));
-		});
+});
 
-	}
+/* Scripts */ 
 
-	getRunningScriptFiles = function(callback){
+apiRoutes.post('/getrunningscripts', function(req, res){	
 
-		var nameOnly = [];
+	getRunningScriptFiles(function(runningScripts){
+		res.json(runningScripts);
+	});
+	
+});
 
-		for (var i=0;i<running_scripts.length;i++){
-			nameOnly.push(running_scripts[i].name);
-		}
-		
-		callback(nameOnly);
+/* Unit Colors */ 
 
-	}
+apiRoutes.post('/loadunitcolors', function(req, res){	
 
-	getTemperature = function(callback){
+	fn = '/home/pi/midimatrix/scripts/unitcolors.json';
 
-		var cmd1 = '/opt/vc/bin/vcgencmd measure_temp';
+	fs.readFile(fn, function(err, buf) {
+	  res.json(JSON.parse(buf.toString()));
+	});
 
-		executeShellCommand(cmd1, function(temp){
-			callback(temp.stdout.replace("temp=","PI Temp: "));			
-		});
+});
 
-	}
+/* Patch Files */
 
-	/* Config Page */
+apiRoutes.post('/savepatch', function(req, res){	
 
-	apiRoutes.post('/savescriptdefinitions', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/scripts/index.json";
-		fnc = JSON.stringify(req.body.scriptsDef, null, 2);
+	fn = '/home/pi/midimatrix/patches/' + req.body.filename + '.json';
+	fnc = JSON.stringify(req.body.patch);
+	
+	fs.writeFile(fn, fnc, function(err, data) {
+	  	if (err) console.log(err);
 
-		fs.writeFile(fn,fnc, function(err, data) {
-		  	if (err) console.log(err);
-		  	res.sendStatus(200);
+	  	fs.readdir('/home/pi/midimatrix/patches/', (err, files) => {
+		  res.json(files);
 		});
 
 	});
 
+});
 
+apiRoutes.post('/loadpatch', function(req, res){	
 
-	apiRoutes.post('/savescriptfile', function(req, res){	
+	fn = '/home/pi/midimatrix/patches/' + req.body.filename;
 
-		fn = '/home/pi/midimatrix/scripts/' + req.body.fileName + '.py';
-		fnc = req.body.fileScript;
-
-		fs.writeFile(fn,fnc, function(err, data) {
-		  	res.sendStatus(200);
-		});
-
+	fs.readFile(fn, function(err, buf) {
+	  res.json(JSON.parse(buf.toString()));
 	});
 
+});
 
-	/* NEW NEW NEW */
+apiRoutes.post('/getpatchfilelist', function(req, res){	
 
-	apiRoutes.post('/loadscriptdefinitions', function(req, res){	
-		
-		getScriptDefinitions(function(scriptDefinitions){
-			res.json(scriptDefinitions);
-		});
- 
+	getPatchList(function(patchList){
+	   res.json(patchList);
 	});
 
-	apiRoutes.post('/loadunits', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/scripts/indexunits.json";
+});
 
-		fs.readFile(fn, function(err, buf) {
-		  res.json(JSON.parse(buf.toString()));
-		});
+apiRoutes.post('/deletepatchfile', function(req, res){	
 
+	fn = '/home/pi/midimatrix/patches/' + req.body.filename.filename + ".json";
+	fs.unlinkSync(fn);
+
+	fs.readdir('/home/pi/midimatrix/patches/', (err, files) => {
+		  res.json(files);
 	});
 
+});
 
-	apiRoutes.post('/loadscriptsdefsandunits', function(req, res){	
-		
-		getScriptDefinitions(function(scriptDefs){
-			getUnits(function(units){
-				res.json({scriptDefs, units});
-			});
-		});
+/* Filter File Controls */
 
-	});
+apiRoutes.post('/runfilesmart', function(req, res){	
 
+	firstClients = [];
 
-	/* Patch Files */
+	callHome("Running: " + req.body.fileName);
 
-	apiRoutes.post('/savetranslations', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/patches/translations.json";
-		fnc = JSON.stringify(req.body.translations, null, 2);
+	executeShellCommand('sudo aconnect -l', function(firstList){
 
-		fs.writeFile(fn,fnc, function(err, data) {
-		  	if (err) console.log(err);
-		  	res.sendStatus(200);
-		});
+		a  = firstList.stdout.split("\n");
 
-	});
-
-	apiRoutes.post('/gettranslations', function(req, res){	
-
-		gettranslations(function(trans){
-		  res.json(trans);
-		});
-
-	});
-
-	apiRoutes.post('/getrunningscripts', function(req, res){	
-
-		getRunningScriptFiles(function(runningScripts){
-			res.json(runningScripts);
-		});
-		
-	});
-
-	apiRoutes.post('/savepatch', function(req, res){	
-
-		fn = '/home/pi/midimatrix/patches/' + req.body.filename + '.json';
-		fnc = JSON.stringify(req.body.patch);
-		
-		fs.writeFile(fn, fnc, function(err, data) {
-		  	if (err) console.log(err);
-
-		  	fs.readdir('/home/pi/midimatrix/patches/', (err, files) => {
-			  res.json(files);
-			});
-
-		});
-
-	});
-
-	apiRoutes.post('/loadpatch', function(req, res){	
-
-		fn = '/home/pi/midimatrix/patches/' + req.body.filename;
-
-		fs.readFile(fn, function(err, buf) {
-		  res.json(JSON.parse(buf.toString()));
-		});
-
-	});
-
-	apiRoutes.post('/loadunitcolors', function(req, res){	
-
-		fn = '/home/pi/midimatrix/tools/unitcolors.json';
-
-		fs.readFile(fn, function(err, buf) {
-		  res.json(JSON.parse(buf.toString()));
-		});
-
-	});
-
-	apiRoutes.post('/getpatchfilelist', function(req, res){	
-
-		getPatchList(function(patchList){
-		   res.json(patchList);
-		});
-
-	});
-
-	apiRoutes.post('/deletepatchfile', function(req, res){	
-
-		fn = '/home/pi/midimatrix/patches/' + req.body.filename.filename + ".json";
-		fs.unlinkSync(fn);
-
-		fs.readdir('/home/pi/midimatrix/patches/', (err, files) => {
-			  res.json(files);
-		});
-
-	});
-
-
-	/* App Settings Files */
-
-	apiRoutes.post('/saveapptemp', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/patches/TEMP.json";
-		fnc = JSON.stringify(req.body.APP_SETTINGS, null, 2);
-
-		fs.writeFile(fn,fnc, function(err, data) {
-		  	if (err) console.log(err);
-		  	res.sendStatus(200);
-		});
-
-	});
-
-	apiRoutes.post('/loadapptemp', function(req, res){	
-		
-		fn = "/home/pi/midimatrix/patches/TEMP.json";
-
-		fs.readFile(fn, function(err, buf) {
-		  res.json(buf.toString());
-		});
-
-	});
-
-
-	/* Operations  - Filterfiles */
-
-
-	apiRoutes.post('/runfilesmart', function(req, res){	
-
-		firstClients = [];
-
-		callHome("Running: " + req.body.fileName);
-
-		executeShellCommand('sudo aconnect -l', function(firstList){
-
-			a  = firstList.stdout.split("\n");
-
-			for (i=0;i<a.length;i++){
-				if (a[i].indexOf("client") > -1 && a[i].indexOf("System") == -1 && a[i].indexOf("through") == -1){
-					firstClients.push(a[i].split(":")[0].replace("client ",""));
-				}
+		for (i=0;i<a.length;i++){
+			if (a[i].indexOf("client") > -1 && a[i].indexOf("System") == -1 && a[i].indexOf("through") == -1){
+				firstClients.push(a[i].split(":")[0].replace("client ",""));
 			}
+		}
 
-			var runScriptCommand = "/home/pi/midimatrix/scripts/" + req.body.fileName + ".py";
+		var runScriptCommand = "/home/pi/midimatrix/scripts/" + req.body.fileName + ".py";
 
-			spawnShellCommand(runScriptCommand, function(runReply){
-				setTimeout(function(){
-					executeShellCommand('sudo aconnect -l', function(secondList){
-						executeShellCommand('sudo amidi -l', function(thirdList){					
-							parseConnectionList(secondList, thirdList, function(midiDevices){
-							
-								a = secondList.stdout.split("\n");
+		spawnShellCommand(runScriptCommand, function(runReply){
+			setTimeout(function(){
+				executeShellCommand('sudo aconnect -l', function(secondList){
+					executeShellCommand('sudo amidi -l', function(thirdList){					
+						parseConnectionList(secondList, thirdList, function(midiDevices){
+						
+							a = secondList.stdout.split("\n");
 
-								rep = { newClient: -1 }
+							rep = { newClient: -1 }
 
-								for (i=0;i<a.length;i++){
+							for (i=0;i<a.length;i++){
 
-									if (a[i].indexOf("client") > -1 && a[i].indexOf("System") == -1 && a[i].indexOf("through") == -1){
+								if (a[i].indexOf("client") > -1 && a[i].indexOf("System") == -1 && a[i].indexOf("through") == -1){
 
-										newClient = a[i].split(":")[0].replace("client ","");
+									newClient = a[i].split(":")[0].replace("client ","");
 
-										if (!firstClients.includes(newClient) ) {
-											rep = { newClient: newClient, newClientPID: runReply.pid,  midiDevices: midiDevices };
-											running_scripts.push({pid: runReply.pid, name: req.body.fileName});
-										}
+									if (!firstClients.includes(newClient) ) {
+										rep = { newClient: newClient, newClientPID: runReply.pid,  midiDevices: midiDevices };
+										running_scripts.push({pid: runReply.pid, name: req.body.fileName});
 									}
-
 								}
 
-								res.json(rep);
+							}
 
-							});
-						})
-					});
-				},operationTimeout);
-			
-			});
-		});
-	
-	});
+							res.json(rep);
 
-	apiRoutes.post('/stopfilterfile', function(req, res){	
+						});
+					})
+				});
+			},operationTimeout);
 		
-		var toRemove;
-
-		for (var i=0;i<running_scripts.length;i++){
-			if (running_scripts[i].pid == req.body.pid){
-				toRemove = i;
-			}
-		}		
-
-		running_scripts.splice(toRemove,1);
-
-		var cmd = "sudo kill -9 " + req.body.pid;
-		executeShellCommand(cmd, function(shellReply){
-			res.json(shellReply);
 		});
-
 	});
 
+});
 
-	/* Operations  - Connections */
+apiRoutes.post('/stopfilterfile', function(req, res){	
+	
+	var toRemove;
 
-	apiRoutes.post('/getsystemstate', function(req,res){
+	for (var i=0;i<running_scripts.length;i++){
+		if (running_scripts[i].pid == req.body.pid){
+			toRemove = i;
+		}
+	}		
 
-		getPatchList(function(patches){
-			getScriptDefinitions(function(scripts){
-				getRunningScriptFiles(function(runningScripts){		
-					getTemperature(function(temp){
-						gettranslations(function(trans){
-							executeShellCommand('sudo aconnect -l', function(aconnectReply){
-								executeShellCommand('sudo amidi -l', function(amidiReply){	
-									parseConnectionList(aconnectReply, amidiReply, function(alsa){
-										
-										returnObject = {
-											APP_PATCHES: patches,
-											APP_SCRIPTS: scripts,
-											APP_RUNNING_SCRIPTS: runningScripts,
-											APP_SETTINGS : {
-												translations: trans
-											},
-											APP_CONNECTIONS: alsa,
-											APP_TEMP: temp
-										}
+	running_scripts.splice(toRemove,1);
 
-										res.json(returnObject);
+	var cmd = "sudo kill -9 " + req.body.pid;
 
-									});
+	callHome("Stopping PID: " + req.body.pid);
+
+	executeShellCommand(cmd, function(shellReply){
+		res.json(shellReply);
+		callHome("Stopped PID: " + req.body.pid);
+	});
+
+});
+
+/* Connection Management */
+
+apiRoutes.post('/getsystemstate', function(req,res){
+
+	getPatchList(function(patches){
+		getScriptDefinitions(function(scripts){
+			getRunningScriptFiles(function(runningScripts){		
+				getTemperature(function(temp){
+					gettranslations(function(trans){
+						executeShellCommand('sudo aconnect -l', function(aconnectReply){
+							executeShellCommand('sudo amidi -l', function(amidiReply){	
+								parseConnectionList(aconnectReply, amidiReply, function(alsa){
+									
+									returnObject = {
+										APP_PATCHES: patches,
+										APP_SCRIPTS: scripts,
+										APP_RUNNING_SCRIPTS: runningScripts,
+										APP_SETTINGS : {
+											translations: trans
+										},
+										APP_CONNECTIONS: alsa,
+										APP_TEMP: temp
+									}
+
+									res.json(returnObject);
+
 								});
 							});
 						});
@@ -621,153 +583,138 @@ socket.on("connection", function (client) {
 		});
 	});
 
+});
 
-	apiRoutes.post('/getmididevices', function(req, res){	
+apiRoutes.post('/getmididevices', function(req, res){	
 
-		executeShellCommand('sudo aconnect -l', function(shellReply){
-			executeShellCommand('sudo amidi -l', function(shellReply2){	
+	executeShellCommand('sudo aconnect -l', function(shellReply){
+		executeShellCommand('sudo amidi -l', function(shellReply2){	
 
-				parseConnectionList(shellReply, shellReply2, function(sp){
-					res.json(sp);
-				});
-
+			parseConnectionList(shellReply, shellReply2, function(sp){
+				res.json(sp);
 			});
+
 		});
-			
 	});
-
-	apiRoutes.post('/connectdevices', function(req, res){	
-
-		var cmd = 'sudo aconnect ' + req.body.from + ' ' + req.body.to;
-
-		executeShellCommand(cmd, function(shellReply){
-
-			res.json(shellReply);
-		});
-
-	});
-
-	apiRoutes.post('/disconnectdevices', function(req, res){	
-
-		var cmd = 'sudo aconnect ' + req.body.from + ' ' + req.body.to + ' -d';
-
-		executeShellCommand(cmd, function(shellReply){
-			res.json(shellReply);
-		});
-
-	});
-
-	apiRoutes.post('/clearallconnections', function(req, res){	
-
-		var cmd1 = 'sudo aconnect -x';
-		var cmd2 = "sudo pkill -9 python";
-
-		executeShellCommand(cmd1, function(shellReply){
-			executeShellCommand(cmd2, function(shellReply2){
-				r = { r1: shellReply, r2: shellReply2 }
-				res.json(r);
-			});
-		});
-
-	});
-
-
-	/* Operations  - Reset & Upload */
-
-	apiRoutes.post('/hardreset', function(req, res){	
-
-		var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/002';
-		var cmd2 = "sudo pkill -9 python";
-
-		running_scripts =  [];
-
-		executeShellCommand(cmd1, function(shellReply){
-			executeShellCommand(cmd2, function(shellReply2){
-				res.json( {r1: shellReply, r2: shellReply2} );
-			});
-		});
-
-	});
-
-	apiRoutes.post('/gettemp', function(req, res){	
-
-		getTemperature(function(temp){
-			res.json({temp: temp});
-		});
-
-	});
-
-	apiRoutes.post('/softreset', function(req, res){	
-
-		var cmd2 = "sudo pkill -9 python";
-
-		running_scripts =  [];
-
-		executeShellCommand(cmd2, function(shellReply2){
-			res.json( { r2: shellReply2} );
-		});
-
-	});
-
-	apiRoutes.post('/reboot', function(req, res){	
-
-		var cmd = "sudo reboot now";
-
-		executeShellCommand(cmd, function(shellReply){
-			res.json(shellReply);
-		});
-
-	});
-
-	apiRoutes.post('/shutdown', function(req, res){	
-
-		var cmd = "sudo shutdown now";
-
-		executeShellCommand(cmd, function(shellReply){
-			res.json(shellReply);
-		});
-
-	});
-
-	apiRoutes.post('/uploaddatatofile', function(req, res){	
-
-		fileName = '/home/pi/midimatrix/scripts/' + req.body.fileName + '.py';
-		fileText = req.body.fileText;
-
-		var scriptMeta = { "title": req.body.fileName, "custom": true }
-
-		fs.readFile('/home/pi/midimatrix/scripts/index.json', function(err, buf) {
-			scriptsObj = JSON.parse(buf.toString());
-			scriptsObj.push(scriptMeta);
-			fs.writeFile('/home/pi/midimatrix/scripts/index.json', JSON.stringify(scriptsObj) , function(err, data) {
-				console.log(err, data);
-			});
-		});
-
-		fs.writeFile(fileName, fileText, function(err, data) {
-		  	if (err) console.log(err);
-
-		  	res.sendStatus(200);
-		});
-
-	});
-
-
-	/* Operations - SendMidi */
-
-	apiRoutes.post('/sendmidi', function(req, res){	
 		
-     	var cmd = "/home/pi/midimatrix/tools/sendmidi " + req.body.sendmidistring;
-		executeShellCommand(cmd, function(shellReply){
-			res.json({command: cmd, reply: shellReply});
-		});
+});
 
+apiRoutes.post('/connectdevices', function(req, res){	
+
+	var cmd = 'sudo aconnect ' + req.body.from + ' ' + req.body.to;
+
+	executeShellCommand(cmd, function(shellReply){
+
+		res.json(shellReply);
 	});
 
-	app.use('/api', apiRoutes);
+});
 
+apiRoutes.post('/disconnectdevices', function(req, res){	
 
-	/* Operations  - Sockets & API */
+	var cmd = 'sudo aconnect ' + req.body.from + ' ' + req.body.to + ' -d';
+
+	executeShellCommand(cmd, function(shellReply){
+		res.json(shellReply);
+	});
+
+});
+
+apiRoutes.post('/clearallconnections', function(req, res){	
+
+	var cmd1 = 'sudo aconnect -x';
+	var cmd2 = "sudo pkill -9 python";
+
+	executeShellCommand(cmd1, function(shellReply){
+		executeShellCommand(cmd2, function(shellReply2){
+			r = { r1: shellReply, r2: shellReply2 }
+			res.json(r);
+		});
+	});
+
+});
+
+/* Reset & Upload */
+
+apiRoutes.post('/hardreset', function(req, res){	
+
+	var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/002';
+	var cmd2 = "sudo pkill -9 python";
+
+	running_scripts =  [];
+
+	executeShellCommand(cmd1, function(shellReply){
+		executeShellCommand(cmd2, function(shellReply2){
+			res.json( {r1: shellReply, r2: shellReply2} );
+		});
+	});
+
+});
+
+apiRoutes.post('/gettemp', function(req, res){	
+
+	getTemperature(function(temp){
+		res.json({temp: temp});
+	});
+
+});
+
+apiRoutes.post('/softreset', function(req, res){	
+
+	var cmd2 = "sudo pkill -9 python";
+
+	running_scripts =  [];
+
+	executeShellCommand(cmd2, function(shellReply2){
+		res.json( { r2: shellReply2} );
+	});
+
+});
+
+apiRoutes.post('/reboot', function(req, res){	
+
+	var cmd = "sudo reboot now";
+
+	executeShellCommand(cmd, function(shellReply){
+		res.json(shellReply);
+	});
+
+});
+
+apiRoutes.post('/shutdown', function(req, res){	
+
+	var cmd = "sudo shutdown now";
+
+	executeShellCommand(cmd, function(shellReply){
+		res.json(shellReply);
+	});
+
+});
+
+/* SendMidi */
+
+apiRoutes.post('/sendmidi', function(req, res){	
+	
+ 	var cmd = "/home/pi/midimatrix/tools/sendmidi " + req.body.sendmidistring;
+	executeShellCommand(cmd, function(shellReply){
+		res.json({command: cmd, reply: shellReply});
+	});
+
+});
+
+app.use('/api', apiRoutes);
+
+/* Socket Ops */
+
+socket.on("connection", function (client) {
+
+	/* Socket API */
+
+	callHome = function(message){
+
+		socket.sockets.emit("printer", message);
+
+	}
 
 	socketRoutes.post('/refresh', function(req, res){	
 		socket.sockets.emit("usb-update");
@@ -796,7 +743,7 @@ socket.on("connection", function (client) {
 	app.use('/corsapi', socketRoutes);
 
 
-	/* Operations - USB Detect */
+	/* USB Detect Socket Push */
 	
 	if (process.argv[2] == "--usbdetect" || process.argv[3] == "--usbdetect"){
 
@@ -810,7 +757,7 @@ socket.on("connection", function (client) {
 
 	}
 
-	/* Raspi GPIO */ 
+	/* Raspi GPIO Value Socket Push */ 
 
 	if (process.argv[2] == "--gpio" || process.argv[3] == "--gpio"){
 
@@ -840,6 +787,5 @@ socket.on("connection", function (client) {
 		});
 
 	}
-
 
 });

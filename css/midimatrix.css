@@ -13,6 +13,10 @@ body{
 
 }
 
+td{
+	vertical-align:top
+}
+
 .noselect{
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -40,8 +44,8 @@ input[type="select"]{
 
 input[type="button"]{
 	width: 70px;
-	border: 2px solid black;
 	margin:4px;
+	margin-top: -5px
 -webkit-box-shadow: 8px 8px 8px 0px rgba(0,0,0,0.26);
 
 }

@@ -1,0 +1,17 @@
+{
+	"USB Uno MIDI Interface": "uc-red",
+	"USB Uno MIDI Interface MIDI 1": "uc-red",
+	"ESI MIDIMATE eX": "uc-green",
+	"ESI MIDIMATE eX MIDI 1": "uc-green",
+	"ESI MIDIMATE eX MIDI 2": "uc-green",
+	"MIDI4x4 MIDI 1":"uc-blue",
+	"MIDI4x4 MIDI 2":"uc-red",
+	"MIDI4x4 MIDI 3":"uc-black",
+	"MIDI4x4 MIDI 4":"uc-black",
+	"UM-ONE MIDI 1":"uc-red",
+	"USB MIDI cable MIDI 1": "uc-green",
+	"USB MIDI cable MIDI 2": "uc-green",
+	"USB MidiKliK Build-1101 MIDI 1": "uc-black",
+	"SQ-1 MIDI 1": "uc-black",
+	"SQ-1 MIDI 2": "uc-black"
+}

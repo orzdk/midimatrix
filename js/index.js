@@ -243,6 +243,9 @@ setFromScript = function(scriptIdx){
 
 	if (selectedFromScript == scriptIdx){
 		selectedFromScript = "";
+		$("#script" + scriptIdx).addClass("mm-but-connection");
+		$("#script" + scriptIdx).removeClass("mm-but-selected");
+		$("#scriptstart").addClass("mm-hidden");
 		return;
 	}
 
@@ -280,25 +283,48 @@ setToScript = function(connectionID){
 
 /* MIDIDINGS ---------------------------------------------- */
 
-startScript = function(connectionID){
+setAutoTranslations = function(runtime){
 
-	pleaseWait();
+	newClient = runtime.midiDevices.alsaDevices[runtime.newClient + ":0"];
+	newClient2 = runtime.midiDevices.alsaDevices[runtime.newClient + ":1"];
 
-	selectedFromScript = "";
+	APP_STATE.APP_SETTINGS.translations[newClient.alsaDeviceClientName] = {}
+	APP_STATE.APP_SETTINGS.translations[newClient.alsaDeviceClientName].inputName = fileName;
+	APP_STATE.APP_SETTINGS.translations[newClient.alsaDeviceClientName].outputName = fileName;
 
-	runFilterFile(fileName, function(runtime){
-		refresh();
+	APP_STATE.APP_SETTINGS.translations[newClient2.alsaDeviceClientName] = {}
+	APP_STATE.APP_SETTINGS.translations[newClient2.alsaDeviceClientName].inputName = fileName;
+	APP_STATE.APP_SETTINGS.translations[newClient2.alsaDeviceClientName].outputName = fileName;
+
+	saveTranslations({translations:APP_STATE.APP_SETTINGS.translations}, function(){
+    	refresh();
 	});
 
 }
 
-connectScript = function(script, connection){
+startScript = function(){
+
+	pleaseWait();
+
+	fileName = APP_STATE.APP_SCRIPTS[selectedFromScript].title;
+
+	runFilterFile(fileName, function(runtime){
+		setAutoTranslations(runtime);
+	});
+
+	selectedFromScript = "";
+
+}
+
+connectScript = function(script){
 
 	pleaseWait();
 
 	fileName = APP_STATE.APP_SCRIPTS[script].title;
 
 	runFilterFile(fileName, function(runtime){
+
+		setAutoTranslations(runtime);
 
 		newClientID = runtime.newClient;
 		newClientPID = runtime.newClientPID;
@@ -472,9 +498,6 @@ renderScripts = function() {
 		$("#webmidi_value").val(fn.f3.va);
 		$("#webmidi_channel").val(fn.f3.ch);
 
-		$("#nrpn_controller").val(fn.f4.co);
-		$("#nrpn_value").val(fn.f4.va);
-		$("#nrpn_channel").val(fn.f4.ch);
 	}
 
 	$(".footer-div").append("<div class='flex-container'>");
@@ -483,7 +506,7 @@ renderScripts = function() {
 		$(".footer-div").append("<input type='button' onclick='setFromScript(\"" + s + "\")' id='script" + s + "' class='mm-but mm-but-filter' value='" + APP_STATE.APP_SCRIPTS[s].title  + "'>");
 	}
 
-	$("#foooter").append("<input type='button' onclick='startScript(\"" + s + "\")' id='scriptstart' class='mm-but mm-but-script mm-hidden foo' value='" + "Start"  + "'>");
+	$("#foooter").append("<input type='button' onclick='startScript()' id='scriptstart' class='mm-but mm-but-script mm-hidden foo' value='" + "Start"  + "'>");
 	$(".footer-div").append("</div>");
 
 	/* Patches  */
@@ -491,20 +514,11 @@ renderScripts = function() {
 	$(".footer-div").append("<div class='flex-container'>");
 
 	$.each(APP_STATE.APP_PATCHES, function(key,obj){
-		isSelected = key == currentPatchIdx ? " [!]" : "";
-
 		if (obj.toString() != "TEMP.json" && obj.toString() != "translations.json")
-		$(".footer-div").append("<input onclick='loadPatch(\"" + key + "\")' type='button' class='mm-but mm-but-script' value='" + obj.toString().replace('.json','') + isSelected  + "'>");
+		$(".footer-div").append("<input onclick='loadPatch(\"" + key + "\")' type='button' class='mm-but mm-but-script' value='" + obj.toString().replace('.json','') + "'>");
 	});	
 
 	$(".footer-div").append("</div>");
-
-
-	goConfig = function(){
-		
-	}
-
-	/* Save Settings */
 
 	$("#foooter").append('<input type=button class="mm-but mm-but-connection foo" style="cursor:pointer" onclick="window.location=\'/config.html\'" id="config" value="CONFIG">');
 	$("#foooter").append('<input class="mm-but mm-but-script mm-txt foo foooter-but" type="text" id="filename" value="">');
@@ -687,7 +701,7 @@ $(document).ready(function(){
 
 		if (APP_STATE.APP_PATCHES.length > currentPatchIdx) {
 			currentPatchIdx++;
-			refresh();
+			loadPatch(currentPatchIdx);
 		}
 
 	});
@@ -696,7 +710,7 @@ $(document).ready(function(){
 
 		if (currentPatchIdx > 0) {
 			currentPatchIdx--;
-			refresh();
+			loadPatch(currentPatchIdx);
 		}
 
 	});
@@ -705,7 +719,7 @@ $(document).ready(function(){
 
 		if (APP_STATE.APP_PATCHES[num]) {
 			currentPatchIdx = num;	
-			refresh();
+			loadPatch(currentPatchIdx);
 		}
 
 	});

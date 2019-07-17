@@ -1,12 +1,4 @@
 {
-  "out_1print_mididings": {
-    "inputName": "out_1_print_mididingsundefined",
-    "outputName": "Print"
-  },
-  "in_1print_mididings": {
-    "inputName": "Print2",
-    "outputName": "in_1_print_mididingsundefined"
-  },
   "USB MIDI cable MIDI 1_USB MIDI cable": {
     "inputName": "Left DIN",
     "outputName": "Left DIN"
@@ -23,16 +15,32 @@
     "inputName": "Back DIN",
     "outputName": "Back DIN"
   },
-  "out_1_ctos_mididings": {
-    "inputName": "out_1_ctos_mididingsundefined",
-    "outputName": "ctos"
+  "in_1_onlyclock_mididings": {
+    "inputName": "onlyclock",
+    "outputName": "onlyclock"
   },
   "in_1_noclock_mididings": {
-    "inputName": "nc",
-    "outputName": "in_1_noclock_mididingsundefined"
+    "inputName": "noclock"
   },
   "out_1_noclock_mididings": {
-    "inputName": "out_1_noclock_mididingsundefined",
-    "outputName": "hest"
+    "outputName": "noclock"
+  },
+  "in_1_ctos_mididings": {
+    "inputName": "ctos",
+    "outputName": "ctos"
+  },
+  "out_1_ctos_mididings": {
+    "inputName": "ctos",
+    "outputName": "ctos"
+  },
+  "in_1_print_mididings": {
+    "inputName": "print"
+  },
+  "out_1_print_mididings": {
+    "outputName": "print"
+  },
+  "out_1_onlyclock_mididings": {
+    "inputName": "onlyclock",
+    "outputName": "onlyclock"
   }
 }
