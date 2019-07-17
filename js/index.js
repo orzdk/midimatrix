@@ -14,7 +14,8 @@ var APP_STATE = {
 	APP_PATCHES:{},
 	APP_SCRIPTS:{},
 	APP_SETTINGS: {
-		translations: {}
+		translations: {},
+		customConnections: []
 	}
 }
 
@@ -209,9 +210,10 @@ setTo = function(alsaDeviceID){
 	if (selectedFromFoot != false){
 
 		alsaDeviceNameID = APP_STATE.APP_CONNECTIONS.alsaDevices[alsaDeviceID].alsaDeviceNameID;
+		alsaDevice = APP_STATE.APP_CONNECTIONS.alsaDevices[alsaDeviceID];
 
-		if (!APP_STATE.APP_SETTINGS.feet) APP_STATE.APP_SETTINGS.feet = [];
-		APP_STATE.APP_SETTINGS.feet.push( { foot: selectedFromFoot, alsaDeviceID: alsaDeviceID, alsaDeviceNameID: alsaDeviceNameID } )
+		if (!APP_STATE.APP_SETTINGS.customConnections) APP_STATE.APP_SETTINGS.customConnections = [];
+		APP_STATE.APP_SETTINGS.customConnections.push( { foot: selectedFromFoot, alsaDeviceID: alsaDeviceID, alsaDeviceNameID: alsaDeviceNameID, alsaDeviceName: translatedName(alsaDevice.alsaDeviceClientName, "inputName", alsaDevice.alsaClientName) } )
 
 		$("#cfoot1").removeClass("mm-but-selected");
 		$("#cfoot2").removeClass("mm-but-selected");
@@ -430,17 +432,15 @@ renderConnections = function(){
 
 	});
 
-	/* Render Feet */
+	/* Render customConnections */
 
-	if (APP_STATE.APP_SETTINGS && APP_STATE.APP_SETTINGS.feet)
-	for (var a=0;a<APP_STATE.APP_SETTINGS.feet.length;a++){
-
+	if (APP_STATE.APP_SETTINGS && APP_STATE.APP_SETTINGS.customConnections)
+	for (var a=0;a<APP_STATE.APP_SETTINGS.customConnections.length;a++){
 		classs = "mm-but mm-but-foot";
-
   		$table.append("<tr>");
-  		$table.append("<td><input type='button' class='" + classs + "' value='" + APP_STATE.APP_SETTINGS.feet[a].foot + "'></td>")
-  		$table.append("<td><input onclick='dropFoot(\"" + outputName + "\")' type='button' class='mm-but mm-but-action' value='DISC'></td>")
-  		$table.append("<td><input type='button' class='" + classs + "' value='" +  APP_STATE.APP_SETTINGS.feet[a].alsaDeviceID + "'></td>")
+  		$table.append("<td><input type='button' class='" + classs + "' value='" + APP_STATE.APP_SETTINGS.customConnections[a].foot.replace("foot","Custom ") + "'></td>")
+  		$table.append("<td><input onclick='removeCustomConnection(\"" + outputName + "\")' type='button' class='mm-but mm-but-action' value='DISC'></td>")
+  		$table.append("<td><input type='button' class='" + classs + "' value='" +  APP_STATE.APP_SETTINGS.customConnections[a].alsaDeviceName + "'></td>")
   		$table.append("</tr>");
 	}
 
@@ -524,6 +524,18 @@ renderScripts = function() {
 
 /* Misc -------------------------------------------------- */
 
+pleaseWait = function(){
+
+	$("#pleaseWait").removeClass("mm-hidden");
+
+}
+
+thankYou = function(){
+
+    $("#pleaseWait").addClass("mm-hidden");
+
+}
+
 hardReset = function(){
 
 	pleaseWait();
@@ -593,35 +605,22 @@ cancelRename = function(){
 
 }
 
-pleaseWait = function(){
+removeCustomConnection = function(foot){
 
-	$("#pleaseWait").removeClass("mm-hidden");
-
-}
-
-thankYou = function(){
-
-    $("#pleaseWait").addClass("mm-hidden");
-
-}
-
-dropFoot = function(foot){
-
-	for (var a=0;a<APP_STATE.APP_SETTINGS.feet.length;a++){
-		if (APP_STATE.APP_SETTINGS.feet.foot == foot){
+	for (var a=0;a<APP_STATE.APP_SETTINGS.customConnections.length;a++){
+		if (APP_STATE.APP_SETTINGS.customConnections.foot == foot){
 			spl = a;
 		}
 	}
 
-	APP_STATE.APP_SETTINGS.feet.splice(a-1,1);
+	APP_STATE.APP_SETTINGS.customConnections.splice(a-1,1);
 	renderConnections();
 
 }
 
 printer = function(msg){
-	if($("#printermessages").children().length > 20) $("#printermessages").children().last().remove();
+	if($("#printermessages").children().length > 12) $("#printermessages").children().last().remove();
 	$("#printermessages").prepend("<div style='display:block'>" + msg + "</div>");
-	console.log(msg);
 
 }
 
@@ -636,47 +635,46 @@ blink = function(control, time){
 
 }
 
+sendMidi = function(customConnID){
+
+	var destinationName;
+
+	event = $("#" + customConnID + "_event").val();
+	controller = Number($("#" + customConnID + "_controller").val());
+	value = Number($("#" + customConnID + "_value").val());
+
+	if (APP_STATE.APP_SETTINGS && APP_STATE.APP_SETTINGS.customConnections)
+	for (a=0;a<APP_STATE.APP_SETTINGS.customConnections.length;a++){
+		if (APP_STATE.APP_SETTINGS.customConnections[a].foot == customConnID){
+			destinationName = APP_STATE.APP_SETTINGS.customConnections[a].alsaDeviceNameID;
+		}
+	}
+
+	if (event != ""){
+		ccString = "dev \"" + destinationName + '\" ' + event + " " + Number($("#" + customConnID + "_eventvalue").val());
+	} else {
+		ccString = "dev \"" + destinationName + '\" cc ' + controller + " " + value;
+	}
+
+	if(destinationName) 
+	ajaxPost('api/sendmidi', { sendmidistring: ccString }, function(sendMidiReply){
+		printer(JSON.stringify(sendMidiReply));
+	});	
+
+}
+
 /* STARTUP   ----------------------------------------------------- */
 
 $(document).ready(function(){
 
-	/* Init Socket Functions */
+	/* Socket Listeners */
 
 	var socket = io.connect(ip);
-
-
-	socket.on("foot-pedal-1", function(msg) {
-		
-		blink("foot1_fire", 250);
-
-		if (semf == null) {
-			sendFoot('foot1');
-			semf = "block";
-			setTimeout(function(){
-				semf = null;
-			},500);
-		}
-
-	});
-
-	socket.on("foot-pedal-2", function(msg) {
-
-		blink("foot2_fire", 250);
-		
-		if (semf == null) {
-			sendFoot('foot2');
-			semf = "block";
-			setTimeout(function(){
-				semf = null;
-			},500);
-		}
-
-	});
 
 	socket.on("printer", function(msg, d) {
 
 		printer(msg);
-
+	
 	});
 
 	socket.on("usb-update", function(msg, d) {
@@ -712,159 +710,45 @@ $(document).ready(function(){
 
 	});
 
-
-	/* Init WebMidi */
-
-	if (WEB_MIDI == 1)
-	WebMidi.enable(function (err) {
-
-		if (err) {
-			console.log("WebMidi could not be enabled.", err);
-		} else {
-			console.log("WebMidi could not not be enabled.");
-		}
-
-		var CC = { 
-			controller: 0, 
-			value:  0, 
-			channel: 0 
+	socket.on("foot-pedal-1", function(msg) {
 		
+		blink("foot1_fire", 250);
+
+		if (semf == null) {
+			sendMidi('foot1');
+			semf = "block";
+			setTimeout(function(){
+				semf = null;
+			},250);
 		}
 
-		var NPRN = {
-			m1: { controller: 0, value:  0, channel: 0 },
-			m2: { controller: 0, value:  0, channel: 0 },
-			m3: { controller: 0, value:  0, channel: 0 },
-			m4: { controller: 0, value:  0, channel: 0 }
+	});
+
+	socket.on("foot-pedal-2", function(msg) {
+
+		blink("foot2_fire", 250);
 		
+		if (semf == null) {
+			sendMidi('foot2');
+			semf = "block";
+			setTimeout(function(){
+				semf = null;
+			},250);
 		}
 
-		var getWebMidiInputsOutputs = function(){
+	});
 
-			var $outputs = $("#webmidi-output-select");
-
-			$.each(WebMidi.outputs, function(i,o) {
-				$outputs.append($("<option />").val(o.name).text(o.name));
-			});
-
-		}
-
-		var sendNPRN = function(outputname, nprn){
-			
-			var output = WebMidi.getOutputByName(outputname);
-
-			output.sendControlChange(nprn.m1.controller, nprn.m1.value, nprn.m1.channel)
-			output.sendControlChange(nprn.m2.controller, nprn.m2.value, nprn.m2.channel)
-			output.sendControlChange(nprn.m3.controller, nprn.m3.value, nprn.m3.channel)
-			output.sendControlChange(nprn.m4.controller, nprn.m4.value, nprn.m4.channel)
-
-		}
-
-		var sendCC = function(outputname, cc){
-			
-			var output = WebMidi.getOutputByName(outputname);
-			output.sendControlChange(cc.controller, cc.value, cc.channel)
-
-		}
-
-		var sendWebMidi = function(sid){
-
-			device = $("#webmidi-output-select").val();
-
-			controller = Number($("#webmidi_controller").val());
-			value = Number($("#webmidi_value").val());
-			channel = Number($("#webmidi_channel").val());
-
-			M = { controller, value, channel }
-
-			sendCC(device, M);
-
-		}
-
-		$("#webmidi_fire").on("click", function(){
-
-			sendWebMidi('webmidi');
-
-		});
-
-		getWebMidiInputsOutputs();	
-
-	});		
-
-
-	/* Init Customs */
-
-	var sendFoot = function(sid){
-		
-		if ($(".footfoot").is(":checked")){
-
-			var nm;
-
-			event = $("#" + sid + "_event").val();
-			controller = Number($("#" + sid + "_controller").val());
-			value = Number($("#" + sid + "_value").val());
-			f1_evalue = Number($("#foot1_eventvalue").val());
-			f2_evalue = Number($("#foot2_eventvalue").val());
-
-			if (APP_STATE.APP_SETTINGS.feet)
-			for (a=0;a<APP_STATE.APP_SETTINGS.feet.length;a++){
-				if (APP_STATE.APP_SETTINGS.feet[a].foot == sid){
-					nm = APP_STATE.APP_SETTINGS.feet[a].alsaDeviceNameID;
-				}
-			}
-
-			if (event != ""){
-
-				if (event == "pc" && sid == "foot1" && f1_evalue > 0) {
-					$("#foot1_eventvalue").val(f1_evalue-1);
-					$("#foot2_eventvalue").val(f2_evalue-1);
-				} else if (event == "pc" && sid == "foot2" && f1_evalue < 128) {
-					$("#foot1_eventvalue").val(f1_evalue+1);
-					$("#foot2_eventvalue").val(f2_evalue+1);
-				}
-
-				eventvalue = Number($("#" + sid + "_eventvalue").val());
-				ccString = "dev \"" + nm + '\" ' + event + " " + eventvalue;
-
-			} else {
-				ccString = "dev \"" + nm + '\" cc ' + controller + " " + value;
-			}
-
-			if(nm) 
-
-			ajaxPost('api/sendmidi', { sendmidistring: ccString }, function(sendMidiReply){
-				printer(JSON.stringify(sendMidiReply));
-			});	
-
-		} else if ($(".footpn").is(":checked")){
-
-			if (sid == "foot1"){
-				if (currentPatchIdx > 0) {
-					currentPatchIdx--;
-					refresh();
-				}
-			} 
-			else if (sid == "foot2"){
-				if (APP_STATE.APP_PATCHES.length > currentPatchIdx) {
-					currentPatchIdx++;
-					refresh();
-
-				}
-			}
-
-		}
-
-	}
+	/* Events */
 
 	$("#foot1_fire").on("click", function(){
 
-		sendFoot('foot1');
+		sendMidi('foot1');
 
 	});
 
 	$("#foot2_fire").on("click", function(){
 
-		sendFoot('foot2');
+		sendMidi('foot2');
 
 	});
 
@@ -880,25 +764,84 @@ $(document).ready(function(){
 	
 	});
 
-	$("#checkShowUploader").on("change", function(e){
+	/* WebMidi */
 
-		c = $("#checkShowUploader").is(":checked");
+	if (WEB_MIDI == 1){
+		WebMidi.enable(function (err) {
 
-		if (c == true){
-			$(".uploader").removeClass("mm-hidden");
-		} else {
-			$(".uploader").addClass("mm-hidden");
-		}
+			if (err) {
+				console.log("WebMidi could not be enabled.", err);
+			} else {
+				console.log("WebMidi could not not be enabled.");
+			}
+
+			var CC = { 
+				controller: 0, 
+				value:  0, 
+				channel: 0 
+			
+			}
+
+			var NPRN = {
+				m1: { controller: 0, value:  0, channel: 0 },
+				m2: { controller: 0, value:  0, channel: 0 },
+				m3: { controller: 0, value:  0, channel: 0 },
+				m4: { controller: 0, value:  0, channel: 0 }
+			
+			}
+
+			var getWebMidiInputsOutputs = function(){
+
+				var $outputs = $("#webmidi-output-select");
+
+				$.each(WebMidi.outputs, function(i,o) {
+					$outputs.append($("<option />").val(o.name).text(o.name));
+				});
+
+			}
+
+			var sendNPRN = function(outputname, nprn){
+				
+				var output = WebMidi.getOutputByName(outputname);
+
+				output.sendControlChange(nprn.m1.controller, nprn.m1.value, nprn.m1.channel)
+				output.sendControlChange(nprn.m2.controller, nprn.m2.value, nprn.m2.channel)
+				output.sendControlChange(nprn.m3.controller, nprn.m3.value, nprn.m3.channel)
+				output.sendControlChange(nprn.m4.controller, nprn.m4.value, nprn.m4.channel)
+
+			}
+
+			var sendCC = function(outputname, cc){
+				
+				var output = WebMidi.getOutputByName(outputname);
+				output.sendControlChange(cc.controller, cc.value, cc.channel)
+
+			}
+
+			var sendWebMidi = function(sid){
+
+				device = $("#webmidi-output-select").val();
+
+				controller = Number($("#webmidi_controller").val());
+				value = Number($("#webmidi_value").val());
+				channel = Number($("#webmidi_channel").val());
+
+				M = { controller, value, channel }
+
+				sendCC(device, M);
+
+			}
+
+			$("#webmidi_fire").on("click", function(){
+				sendWebMidi('webmidi');
+			});
+
+			getWebMidiInputsOutputs();	
+
+		}); 
 	
-	});
-
-	$(".footcb").on("click", function(t){
-
-		$(".footcb").not(this).prop("checked",false);
-
-	});
+	} 
 
 	refresh();		
-
 
 });

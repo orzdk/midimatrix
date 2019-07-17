@@ -819,9 +819,6 @@ socket.on("connection", function (client) {
 
 		raspi.init(() => {
 
-			lastpedal1 = -1;	
-			lastpedal2 = -1;
-
 		  	const input1 = new gpio.DigitalInput({
 		    	pin: 'GPIO24',
 		    	pullResistor: gpio.PULL_UP
@@ -833,11 +830,11 @@ socket.on("connection", function (client) {
 		  	});
 
 		  	input1.on('change', function(b){
-		  		if (b!=lastpedal1) { socket.sockets.emit("foot-pedal-1", b); lastpedal1 = b; }
+		  		socket.sockets.emit("foot-pedal-1", b);
 		  	});
 
 		  	input2.on('change', function(c){
-		  		if (c!=lastpedal2) { socket.sockets.emit("foot-pedal-2", c); lastpedal2 = c; }
+		  		socket.sockets.emit("foot-pedal-2", c)
 		  	});
 
 		});

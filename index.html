@@ -74,10 +74,14 @@
 					<hr>
 
 					<span id="sendMidiSpan" class="mm-hidden">
-
+					
+					<!--
 					<label><input checked type="checkbox" id="cbfootblock" class="footcb footfoot">Foot 1/2</label>
 					<label><input type="checkbox" id="cbprevnext" class="footcb footpn">Prev/Next</label>
-					<label><input type="checkbox" id="cbwebmidi" class="footcb footwebmidi">Webmidi&nbsp;<select class="footselect" id="webmidi-output-select"></select></label>
+					<label><input type="checkbox" id="cbwebmidi" class="footcb footwebmidi">;
+					-->
+
+					<label>Webmidi Output&nbsp;<select class="footselect" id="webmidi-output-select"></select></label>
 					
 					<br>
 					<br>
@@ -85,7 +89,7 @@
 					<table style="font-size: 10px">
 						
 						<tr style="height: 15px">
-							<td>Sender</td>
+							<td></td>
 							<td>Controller</td>
 							<td>Value</td>
 							<td>Channel OR </td>
@@ -95,7 +99,7 @@
 						</tr>
 
 						<tr>
-							<td>Custom1</td>
+							<td>Custom 1</td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot1_controller"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot1_value"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot1_channel"></td>
@@ -107,7 +111,7 @@
 
 
 						<tr>
-							<td>Custom2</td>
+							<td>Custom 2</td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot2_controller"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot2_value"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="foot2_channel"></td>
@@ -118,14 +122,13 @@
 
 
 						<tr>
-							<td>Manual</td>
+							<td>Web MIDI</td>
 							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_controller"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_value"></td>
 							<td><input class="mm-narrow-text" type="text" value="" id="webmidi_channel"></td>
 							<td></td>
 							<td></td>
 							<td><input class="mm-narrow-text" type="button" value="Send" id="webmidi_fire"></td>
-
 						</tr>
 
 
