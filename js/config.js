@@ -181,6 +181,13 @@ function genericTextboxKeyUp(that, unitIdx){
 
 }
 
+function parseAndSave(){
+	saveScriptsDefinition(scripts, function(){
+		parseScriptsDefinition();
+	});
+
+}
+
 function parseScriptsDefinition(){
 
 	fileName = "";
@@ -234,7 +241,8 @@ function parseScriptsDefinition(){
 
 			if (!incomplete){
 				saveScriptFile(saveObj);
-				$("#script-text").append(fileName + " saved | ");				
+				$("#script-text").append(saveObj.fileName + " saved | ");	
+
 			} else {
 				$("#script-text").append(fileName + " INCOMPLETE | ");	
 			}
@@ -276,15 +284,16 @@ function titleKeyUp(that){
 function renderUnitDefinitions(){
 
 	for (unit=0;unit<UNITS.length;unit++){
-		$("#unit-definition-list").append("<div id='" +  UNITS[unit].title + "' onclick='unitDefinitionClick(this)' class='mm-but mm-but-short mm-but-script'>" + UNITS[unit].title + "</div>");
+		$("#unit-definition-list").append("<div style='width:60px!important;height:10px!important' id='" +  UNITS[unit].title + "' onclick='unitDefinitionClick(this)' class='mm-but mm-but-short mm-but-script'>" + UNITS[unit].title + "</div>");
 	}
 
-	$("#unit-definition-list").append("<br><br><div id='addscript' onclick='addScript()' class='mm-but  mm-but-short mm-but-function'>++</div>");
-	$("#unit-definition-list").append("<div id='parsescript' onclick='parseScriptsDefinition()' class='mm-but mm-but-short mm-but-function'>PARSE</div>");
-	$("#unit-definition-list").append("<div id='savescript' onclick='saveScriptsDefinition()' class='mm-but mm-but-short mm-but-function'>SAVE</div>");
-	$("#unit-definition-list").append("<a href='/' class='mm-but mm-but-short mm-but-connection'>SCENE</a>");
+	$("#unit-definition-list").append("<br><div style='height:10px!important' id='addscript' onclick='addScript()' class='mm-but  mm-but-short mm-but-function'>Add New</div>");
+	$("#unit-definition-list").append("<div style='height:10px!important' id='parsescript' onclick='parseAndSave()' class='mm-but mm-but-short mm-but-function'>Parse & Save</div>");
+	$("#unit-definition-list").append("<a style='height:10px!important' href='/' class='mm-but mm-but-short mm-but-connection'>SCENE</a>");
 
 }
+
+//saveScriptsDefinition()
 
 function renderscripts(){
 

@@ -275,7 +275,7 @@ getPatchList = function(callback){
 
 getScriptDefinitions = function(callback){
 
-	file = "/home/pi/midimatrix/scripts/index.json";
+	file = "/home/pi/midimatrix/scripts/_index.json";
 
 	fs.readFile(file, function(err, buf) {
 	 	callback(JSON.parse(buf.toString()));
@@ -285,7 +285,7 @@ getScriptDefinitions = function(callback){
 
 getUnits = function(callback){
 
-	file = "/home/pi/midimatrix/scripts/indexunits.json";
+	file = "/home/pi/midimatrix/scripts/_indexunits.json";
 
 	fs.readFile(file, function(err, buf) {
 	  callback(JSON.parse(buf.toString()));
@@ -295,7 +295,7 @@ getUnits = function(callback){
 
 gettranslations = function(callback){
 
-	file = "/home/pi/midimatrix/patches/translations.json";
+	file = "/home/pi/midimatrix/patches/_translations.json";
 
 	fs.readFile(file, function(err, buf) {
 	  callback(JSON.parse(buf.toString()));
@@ -327,9 +327,17 @@ getTemperature = function(callback){
 
 /* Config Page */
 
+apiRoutes.post('/loadscriptdefinitions', function(req, res){	
+	
+	getScriptDefinitions(function(scriptDefinitions){
+		res.json(scriptDefinitions);
+	});
+
+});
+
 apiRoutes.post('/savescriptdefinitions', function(req, res){	
 	
-	fn = "/home/pi/midimatrix/scripts/index.json";
+	fn = "/home/pi/midimatrix/scripts/_index.json";
 	fnc = JSON.stringify(req.body.scriptsDef, null, 2);
 
 	fs.writeFile(fn,fnc, function(err, data) {
@@ -350,17 +358,9 @@ apiRoutes.post('/savescriptfile', function(req, res){
 
 });
 
-apiRoutes.post('/loadscriptdefinitions', function(req, res){	
-	
-	getScriptDefinitions(function(scriptDefinitions){
-		res.json(scriptDefinitions);
-	});
-
-});
-
 apiRoutes.post('/loadunits', function(req, res){	
 	
-	fn = "/home/pi/midimatrix/scripts/indexunits.json";
+	fn = "/home/pi/midimatrix/scripts/_indexunits.json";
 
 	fs.readFile(fn, function(err, buf) {
 	  res.json(JSON.parse(buf.toString()));
@@ -382,7 +382,7 @@ apiRoutes.post('/loadscriptsdefsandunits', function(req, res){
 
 apiRoutes.post('/savetranslations', function(req, res){	
 	
-	fn = "/home/pi/midimatrix/patches/translations.json";
+	fn = "/home/pi/midimatrix/patches/_translations.json";
 	fnc = JSON.stringify(req.body.translations, null, 2);
 
 	fs.writeFile(fn,fnc, function(err, data) {
@@ -414,7 +414,7 @@ apiRoutes.post('/getrunningscripts', function(req, res){
 
 apiRoutes.post('/loadunitcolors', function(req, res){	
 
-	fn = '/home/pi/midimatrix/scripts/unitcolors.json';
+	fn = '/home/pi/midimatrix/scripts/_unitcolors.json';
 
 	fs.readFile(fn, function(err, buf) {
 	  res.json(JSON.parse(buf.toString()));

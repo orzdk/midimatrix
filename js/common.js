@@ -10,6 +10,13 @@ Array.prototype.remove = function() {
     return this;
 };
 
+String.prototype.replaceAll = function(search, replace) {
+
+    var that = this;
+    return that.replace(new RegExp(search, 'g'), replace);
+
+}
+
 $.urlParam = function (name) {
     var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.search);
     return (results !== null) ? results[1] || 0 : false;

@@ -12,6 +12,10 @@
 	"USB MIDI cable MIDI 1": "uc-green",
 	"USB MIDI cable MIDI 2": "uc-green",
 	"USB MidiKliK Build-1101 MIDI 1": "uc-black",
-	"SQ-1 MIDI 1": "uc-black",
-	"SQ-1 MIDI 2": "uc-black"
+	"SQ-1 MIDI 1": "uc-yellow",
+	"SQ-1 MIDI 2": "uc-yellow",
+	"OP-1 Midi Device MIDI 1": "uc-white",
+	"LPK25 MIDI 1":"uc-gray"
+
+
 }

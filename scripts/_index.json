@@ -137,5 +137,56 @@
         "reversed": "true"
       }
     ]
+  },
+  {
+    "title": "MaxVel",
+    "units": [
+      {
+        "type": "modifi",
+        "paramsType": "STRING",
+        "title": "Velocity",
+        "params": [
+          "VELOCITY"
+        ],
+        "paramsMask": "Velocity(fixed={0})",
+        "objects": {
+          "VELOCITY": "127"
+        }
+      }
+    ]
+  },
+  {
+    "title": "ctos2",
+    "units": [
+      {
+        "type": "frrtxt",
+        "paramsType": "STRING",
+        "title": "Freetext",
+        "params": [
+          "STRING"
+        ],
+        "paramsMask": "{0}",
+        "objects": {
+          "STRING": "Filter(SYSRT_CONTINUE) % Generator(SYSRT_START, EVENT_PORT, EVENT_CHANNEL, 0, 0) >>  \t\t~Filter(SYSCM_SONGPOS) >>  \t\tPrint()"
+        }
+      }
+    ]
+  },
+  {
+    "title": "ctos3",
+    "units": [
+      {
+        "type": "frrtxt",
+        "paramsType": "STRING",
+        "title": "Freetext",
+        "params": [
+          "STRING"
+        ],
+        "paramsMask": "{0}",
+        "objects": {
+          "STRING": "Filter(SYSRT_CONTINUE) % Generator(SYSRT_START, EVENT_PORT, EVENT_CHANNEL, 0, 0) >>  \t\t~Filter(SYSRT_STOP,SYSCM_SONGPOS) >>  \t\tPrint()"
+        }
+      }
+    ]
   }
 ]

@@ -20,9 +20,11 @@
     "outputName": "onlyclock"
   },
   "in_1_noclock_mididings": {
-    "inputName": "noclock"
+    "inputName": "noclock",
+    "outputName": "noclock"
   },
   "out_1_noclock_mididings": {
+    "inputName": "noclock",
     "outputName": "noclock"
   },
   "in_1_ctos_mididings": {
@@ -34,13 +36,51 @@
     "outputName": "ctos"
   },
   "in_1_print_mididings": {
-    "inputName": "print"
+    "inputName": "print",
+    "outputName": "print"
   },
   "out_1_print_mididings": {
+    "inputName": "print",
     "outputName": "print"
   },
   "out_1_onlyclock_mididings": {
     "inputName": "onlyclock",
     "outputName": "onlyclock"
+  },
+  "in_1_chan11_mididings": {
+    "inputName": "chan11",
+    "outputName": "chan11"
+  },
+  "out_1_chan11_mididings": {
+    "inputName": "chan11",
+    "outputName": "chan11"
+  },
+  "OP-1 Midi Device MIDI 1_OP-1 Midi Device": {
+    "inputName": "OP-1",
+    "outputName": "OP-1"
+  },
+  "SQ-1 MIDI 1_SQ-1": {
+    "inputName": "SQ-1-1",
+    "outputName": "SQ-1-1"
+  },
+  "SQ-1 MIDI 2_SQ-1": {
+    "inputName": "SQ-1-2",
+    "outputName": "SQ-1-2"
+  },
+  "in_1_ctos2_mididings": {
+    "inputName": "ctos2",
+    "outputName": "ctos2"
+  },
+  "out_1_ctos2_mididings": {
+    "inputName": "ctos2",
+    "outputName": "ctos2"
+  },
+  "in_1_ctos3_mididings": {
+    "inputName": "ctos3",
+    "outputName": "ctos3"
+  },
+  "out_1_ctos3_mididings": {
+    "inputName": "ctos3",
+    "outputName": "ctos3"
   }
 }

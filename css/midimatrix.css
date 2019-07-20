@@ -1,9 +1,9 @@
 body{
-	background-color: rgb(220,220,160);
+	background-color: MediumSeaGreen /*rgb(220,220,160)*/;
 	padding:0px!important;
 	width: 100%;
 	height: 100%;
-	overflow:hidden;
+	overflow-x:hidden;
 }
 
 *{
@@ -68,6 +68,7 @@ td{
 .uc-white{
 	color:black!important;
 	background-color: white!important;
+	border: 2px solid black!important;
 }
 
 .uc-blue{
@@ -100,6 +101,10 @@ td{
 	background-color: black!important
 }
 
+.uc-gray{
+	color: white!important;
+	background-color: gray!important
+}
 
 .red{
 	color:red
@@ -130,8 +135,8 @@ td{
 }
 
 #fromdevices{
-	max-width:70px;
-	margin: 3px!important;
+	max-width:75px;
+	margin: 4px!important;
 }
 
 #todevices{
@@ -170,8 +175,8 @@ td{
 }
 
 .struct-td{
-	padding-left: 10px;
-	padding-right: 10px;
+	padding-left: 5px;
+	padding-right: 5px;
 }
 
 .struct-td-middle{
@@ -198,11 +203,12 @@ td{
 	margin:5px;
 	font-size: 8px;
 	cursor: pointer;
-	font-weight: bold;	
+	font-weight: bolder;	
 	width: 70px;
-	height: 24px;
-	border: 2px solid black!important;
-	border-radius: 5px
+	height: 22px;
+	/*border: 1px solid white!important;*/
+	border:none!important;
+	border-radius: 4px
 }
 
 
@@ -236,8 +242,16 @@ td{
 	padding:5px;
 	margin:3px;
 	width: 75px;
-	height: 24px;
+	height: 22px;
 	visibility: hidden;
+}
+
+.mm-but-none{
+	padding:5px;
+	margin:3px;
+	width: 75px;
+	height: 24px;
+	display: none;
 }
 
 .mm-but-action{
@@ -391,7 +405,12 @@ td{
 
 .script-bggold{
 	border: 1px solid black;
-	background-color: #eeee99;
+	background-color: lightgray;
+	-moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    border-radius: 6px;
+    margin-left:9px
 }
 
 .sysexdata{

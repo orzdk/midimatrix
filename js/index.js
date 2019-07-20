@@ -8,24 +8,12 @@ var currentPatchIdx = 0;
 var semf = null;
 var unitColors;
 
-var APP_STATE = {
-	APP_CONNECTIONS:{},
-	APP_RUNNING_SCRIPTS:[],
-	APP_PATCHES:{},
-	APP_SCRIPTS:{},
-	APP_SETTINGS: {
-		translations: {},
-		customConnections: []
-	}
-}
-
 var ip = "192.168.0.21:8000";
-var WEB_MIDI = 0;
+var WEB_MIDI = 1;
 
 /* Render & Refresh ---------------------------------------- */
 
 render = function(){
-
 	ajaxPost('api/loadunitcolors', null, function(uColors){
 
 		unitColors = uColors;
@@ -39,16 +27,14 @@ render = function(){
 		thankYou();
 
 	});
-
 }
-
 
 refresh = function(callback){
 	ajaxPost('api/getsystemstate', null, function(appState){
 		APP_STATE = appState;
+		console.log(APP_STATE);
 		if (callback) callback(); else render();
 	});
-
 }
 
 /* LOOKUP --------------------------------------------------- */
@@ -64,7 +50,12 @@ translatedName = function(clientOriginalName, direction, co){
 	return APP_STATE.APP_SETTINGS.translations[clientOriginalName][direction]
 
 	return clientOriginalName + co; 	
+}
 
+prettyName = function(uglyName){
+	var fnn = uglyName.replaceAll('_');
+	fnn = fnn.substring(0,1).toUpperCase() + fnn.substring(1,fnn.length).toLowerCase();
+	return fnn;
 }
 
 /* PATCHES --------------------------------------------------- */
@@ -107,7 +98,6 @@ processPatch = function(patchData){
 		});
 
 	});
-
 }
 
 loadPatch = function(patchIdx){
@@ -117,7 +107,6 @@ loadPatch = function(patchIdx){
 	loadPatchFile(APP_STATE.APP_PATCHES[patchIdx], function(data){
 		processPatch(data);
 	});
-
 }
 
 savePatch = function(){
@@ -144,7 +133,6 @@ savePatch = function(){
 			render();
 		});
 	});
-
 }
 
 deletePatch = function(){
@@ -162,46 +150,50 @@ deletePatch = function(){
 			render();
 		});
 	}
-
 }
 
 /* FROM-TO  --------------------------------------------------- */
 
 setFrom = function(alsaDeviceID){
 
+	console.log("setFrom", alsaDeviceID);
+
 	$("#cfoot1").removeClass("mm-but-selected");
 	$("#cfoot2").removeClass("mm-but-selected");
 	$(".setfrom").removeClass("mm-but-selected");
 	$(".mm-but-filter").removeClass("mm-but-selected");
 
-		if (alsaDeviceID.indexOf("foot") > -1){
-		
+	if (alsaDeviceID.indexOf("foot") > -1){
+	
 		spl = -1;
 
 		if (spl>-1){
 			selectedFromFoot = false;
 		} else {
-				$("#c" + alsaDeviceID).addClass("mm-but-selected");
-				selectedFromFoot = alsaDeviceID; 				
-			} 
+			$("#c" + alsaDeviceID).addClass("mm-but-selected");
+			selectedFromFoot = alsaDeviceID; 				
+		} 
 
-		} else {
+	} else {
 
-			selectedFromFoot = false;
+		selectedFromFoot = false;
 
-			if (selectedFrom == alsaDeviceID){
-				selectedFrom = "";
-				return;
-			}
-
-			$("#setto" + alsaDeviceID.replace(":","_")).addClass("mm-but-selected");
-
-			selectedFrom = alsaDeviceID;
+		if (selectedFrom == alsaDeviceID){
+			selectedFrom = "";
+			return;
 		}
+
+		$("#setto" + alsaDeviceID.replace(":","_")).addClass("mm-but-selected");
+
+		selectedFrom = alsaDeviceID;
+		console.log(selectedFrom);
+	}
 
 }
 
 setTo = function(alsaDeviceID){
+
+	console.log("setFrom", alsaDeviceID);
 
 	setToRename = alsaDeviceID;
 
@@ -222,6 +214,7 @@ setTo = function(alsaDeviceID){
 		
 	}
 	else {
+		console.log("setFrom", selectedFrom, alsaDeviceID);
 
 		if (selectedFrom != ""){
 
@@ -233,7 +226,6 @@ setTo = function(alsaDeviceID){
 			
 		}
 	}
-
 }
 
 setFromScript = function(scriptIdx){
@@ -256,11 +248,10 @@ setFromScript = function(scriptIdx){
 	$("#script" + scriptIdx).addClass("mm-but-selected");
 
 	selectedFromScript = scriptIdx;
-
 }
 
 setToScript = function(connectionID){
-
+	
 	clickedConnection = APP_STATE.APP_CONNECTIONS.alsaDeviceConnectionsObj[connectionID];
 
 	$(".mm-but-action").val("DISCO");
@@ -278,7 +269,6 @@ setToScript = function(connectionID){
 		disconnectSelected();
 
 	}
-
 }
 
 /* MIDIDINGS ---------------------------------------------- */
@@ -299,7 +289,6 @@ setAutoTranslations = function(runtime){
 	saveTranslations({translations:APP_STATE.APP_SETTINGS.translations}, function(){
     	refresh();
 	});
-
 }
 
 startScript = function(){
@@ -313,7 +302,6 @@ startScript = function(){
 	});
 
 	selectedFromScript = "";
-
 }
 
 connectScript = function(script){
@@ -340,7 +328,6 @@ connectScript = function(script){
 		refresh();
 
 	});
-
 }
 
 /* Connections -------------------------------------------- */
@@ -362,7 +349,6 @@ renameDeviceConnection = function(){
 	setToRename = "";
 
 	render();
-
 }
 
 disconnectConnection = function(from, to){
@@ -373,7 +359,6 @@ disconnectConnection = function(from, to){
 			render();
 		});		
 	});
-
 }
 
 disconnectSelected = function(){
@@ -382,7 +367,11 @@ disconnectSelected = function(){
 	to = clickedConnection.to.alsaDeviceID;
 
 	disconnectConnection(from, to);
+}
 
+refreshUI = function(){
+
+	window.location.href = 'http://' + ip;
 }
 
 /* RENDER   ----------------------------------------------- */
@@ -399,43 +388,62 @@ renderDeviceButtons = function(){
 		classs = "mm-but mm-but-connection";
 		classs += " uc " + unitColors[alsaDevice.alsaDeviceName];
 
-		if (alsaDevice.alsaDeviceNameID.indexOf("in_") > -1) {
-			hideOutput = true;
-			classs = "mm-but mm-but-filter";
-		} else if (alsaDevice.alsaDeviceNameID.indexOf("out_") > -1) {
-			hideInput = true;
-			classs = "mm-but mm-but-filter";
-		}
-			
   		outputName = translatedName(alsaDevice.alsaDeviceClientName, "outputName", alsaDevice.alsaClientName);
   		inputName = translatedName(alsaDevice.alsaDeviceClientName, "inputName", alsaDevice.alsaClientName);
 
-		inputClass  = (alsaDevice.alsaDeviceIO.indexOf("I") > -1 && hideInput == false) ? classs : "mm-but-disabled";
-		outputClass = (alsaDevice.alsaDeviceIO.indexOf("O") > -1 && hideOutput == false) ? classs : "mm-but-disabled";
+		if (alsaDevice.alsaDeviceNameID.indexOf("in_") > -1) {
+			hideOutput = true;
+			classs = "mm-but mm-but-filter";
+			inputName = prettyName(inputName);
+		} else if (alsaDevice.alsaDeviceNameID.indexOf("out_") > -1) {
+			hideInput = true;
+			classs = "mm-but mm-but-filter";
+			outputName = prettyName(outputName);
+		}
 
-		output = '<input title="' + alsaDevice.alsaClientName + " " + outputName + ", " + alsaDevice.alsaDeviceID + '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID + '\')" class="setfrom '  + outputClass + '" id="setto' + alsaDeviceID.replace(":","_")  + '" onclick="setFrom(\'' + alsaDeviceID + '\')" value="' + outputName + '"/>';	
-		input = '<input title="' + alsaDevice.alsaClientName + " " + outputName + ", " + alsaDevice.alsaDeviceID + '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID + '\')" class="setto ' + inputClass + '" id="setfrom'  + alsaDeviceID.replace(":","_")  + '" onclick="setTo(\'' + alsaDeviceID + '\')" value="' + inputName + '"/>';
+		var inputClass  = (alsaDevice.alsaDeviceIO.indexOf("I") > -1 && hideInput == false) ? classs : (hideInput == true ? "mm-but-none" : "mm-but-disabled");
+		var outputClass = (alsaDevice.alsaDeviceIO.indexOf("O") > -1 && hideOutput == false) ? classs : (hideOutput == true ? "mm-but-none" : "mm-but-disabled");
 
-		$("#fromdevices").append($(output));			 				
-		$("#todevices").append($(input));
+		var outputButton;
+		var inputButton;
+
+		if (alsaDevice.alsaDeviceNameID.indexOf("in_") > -1 || alsaDevice.alsaDeviceNameID.indexOf("out_") > -1){
+			outputButton = 
+			'<input title="' + alsaDevice.alsaClientName + " " + outputName + ", " + alsaDevice.alsaDeviceID 
+			+ '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID 
+			+ '\')" class="setfrom '  + outputClass + '" id="setto' + alsaDeviceID.replace(":","_")  
+			+ '" onclick="setFrom(\'' + alsaDeviceID + '\')" value="' + outputName + '"/>';	
+
+			inputButton = '<input title="' + alsaDevice.alsaClientName + " " + inputName + ", " + alsaDevice.alsaDeviceID 
+			+ '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID 
+			+ '\')" class="setto ' + inputClass + '" id="setfrom'  + alsaDeviceID.replace(":","_")  
+			+ '" onclick="setTo(\'' + alsaDeviceID + '\')" value="' + inputName + '"/>';
+
+			$("#todevices").append($(inputButton));			 				
+			$("#fromdevices").append($(outputButton));
+		} else 
+		{
+			outputButton = 
+			'<input title="' + alsaDevice.alsaClientName + " " + outputName + ", " + alsaDevice.alsaDeviceID 
+			+ '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID 
+			+ '\')" class="setto '  + outputClass + '" id="setfrom' + alsaDeviceID.replace(":","_")  
+			+ '" onclick="setTo(\'' + alsaDeviceID + '\')" value="' + outputName + '"/>';	
+
+			inputButton = '<input title="' + alsaDevice.alsaClientName + " " + inputName + ", " + alsaDevice.alsaDeviceID 
+			+ '" type="button" onmouseup="holdRenameRelease()" onmousedown="holdToRename(\'' + alsaDeviceID 
+			+ '\')" class="setfrom ' + inputClass + '" id="setto'  + alsaDeviceID.replace(":","_")  
+			+ '" onclick="setFrom(\'' + alsaDeviceID + '\')" value="' + inputName + '"/>';
+
+			$("#fromdevices").append($(inputButton));			 				
+			$("#todevices").append($(outputButton));
+		}
 
 	});
-	 
-	var refreshButton = $('<input type="button" class="mm-but mm-but-function" id="refrfeshwin" onclick="window.location.href=\'http://' + ip + '\'" value="Refresh"/>'); 		
-	var hardresetButton = $('<input type="button" class="mm-but mm-but-function" id="hardreset" onclick="hardReset()" value="Reset"/>'); 
-	var rebootButton = $('<input type="button" class="mm-but mm-but-function" id="reboot" onclick="reboot()" value="Boot"/>'); 
-	var shutdownButton = $('<input type="button" class="mm-but mm-but-function" id="shutdown" onclick="shutdown()" value="Shutdown"/>'); 
+	
 	var foot1Button = $('<input type="button" class="mm-but mm-but-foot" id="cfoot1" onclick="setFrom(\'foot1\')" value="Custom1"/>'); 
 	var foot2Button = $('<input type="button" class="mm-but mm-but-foot" id="cfoot2" onclick="setFrom(\'foot2\')" value="Custom2"/>'); 
-
-	$("#foooter").empty();
-	$("#foooter").append(refreshButton);
-	$("#foooter").append(hardresetButton);
-	$("#foooter").append(rebootButton);
-	$("#foooter").append(shutdownButton);
 	$("#fromdevices").append(foot1Button);
 	$("#fromdevices").append(foot2Button);
-
 }
 
 renderConnections = function(){
@@ -451,9 +459,9 @@ renderConnections = function(){
 		iclasss = connection.to.alsaDeviceNameID.indexOf("in_") > -1 ? "mm-but mm-but-filter" : "mm-but mm-but-connection" + " uc " + unitColors[connection.to.alsaDeviceName];
 
   		$table.append("<tr>");
-  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + prettyName(translatedName(connection.from.alsaDeviceClientName,"outputName")) + "'></td>")
   		$table.append("<td><input onclick='setToScript(\"" + connection.connectionUID + "\")' type='button' class='mm-but mm-but-action' value='DISCO'></td>")
-  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + prettyName(translatedName(connection.to.alsaDeviceClientName,"inputName")) + "'></td>")
   		$table.append("</tr>");
 
 	});
@@ -469,7 +477,6 @@ renderConnections = function(){
   		$table.append("<td><input type='button' class='" + classs + "' value='" +  APP_STATE.APP_SETTINGS.customConnections[a].alsaDeviceName + "'></td>")
   		$table.append("</tr>");
 	}
-
 }
 
 renderScripts = function() {
@@ -503,7 +510,7 @@ renderScripts = function() {
 	$(".footer-div").append("<div class='flex-container'>");
 
 	for (s=0;s<APP_STATE.APP_SCRIPTS.length;s++){
-		$(".footer-div").append("<input type='button' onclick='setFromScript(\"" + s + "\")' id='script" + s + "' class='mm-but mm-but-filter' value='" + APP_STATE.APP_SCRIPTS[s].title  + "'>");
+		$(".footer-div").append("<input type='button' onclick='setFromScript(\"" + s + "\")' id='script" + s + "' class='mm-but mm-but-filter' value='" + prettyName(APP_STATE.APP_SCRIPTS[s].title)  + "'>");
 	}
 
 	$("#foooter").append("<input type='button' onclick='startScript()' id='scriptstart' class='mm-but mm-but-script mm-hidden foo' value='" + "Start"  + "'>");
@@ -514,25 +521,12 @@ renderScripts = function() {
 	$(".footer-div").append("<div class='flex-container'>");
 
 	$.each(APP_STATE.APP_PATCHES, function(key,obj){
-		if (obj.toString() != "TEMP.json" && obj.toString() != "translations.json")
-		$(".footer-div").append("<input onclick='loadPatch(\"" + key + "\")' type='button' class='mm-but mm-but-script' value='" + obj.toString().replace('.json','') + "'>");
+		if (obj.toString() != "_translations.json")
+		$(".footer-div").append("<input onclick='loadPatch(\"" + key + "\")' type='button' class='mm-but mm-but-script' value='" + obj.toString().replace('.json','').replace('_','') + "'>");
 	});	
 
 	$(".footer-div").append("</div>");
 
-	$("#foooter").append('<input type=button class="mm-but mm-but-connection foo" style="cursor:pointer" onclick="window.location=\'/config.html\'" id="config" value="CONFIG">');
-	$("#foooter").append('<input class="mm-but mm-but-script mm-txt foo foooter-but" type="text" id="filename" value="">');
-	$("#foooter").append('<input class="mm-but mm-but-script foo" type=button id="saveSettings" value="Save">');
-	$("#foooter").append('<input class="mm-but mm-but-script foo" type=button id="deleteSettings" value="Delete">');
-	$("#foooter").append('');
-
-	$("#saveSettings").on("click", function(){
-		savePatch();
-	});
-
-	$("#deleteSettings").on("click", function(){
-		deletePatch();
-	});
 
 }
 
@@ -677,6 +671,14 @@ sendMidi = function(customConnID){
 
 }
 
+$("#saveSettings").on("click", function(){
+	savePatch();
+});
+
+$("#deleteSettings").on("click", function(){
+	deletePatch();
+});
+
 /* STARTUP   ----------------------------------------------------- */
 
 $(document).ready(function(){
@@ -787,70 +789,70 @@ $(document).ready(function(){
 				console.log("WebMidi could not be enabled.", err);
 			} else {
 				console.log("WebMidi could not not be enabled.");
-			}
 
-			var CC = { 
-				controller: 0, 
-				value:  0, 
-				channel: 0 
-			
-			}
+				var CC = { 
+					controller: 0, 
+					value:  0, 
+					channel: 0 
+				
+				}
 
-			var NPRN = {
-				m1: { controller: 0, value:  0, channel: 0 },
-				m2: { controller: 0, value:  0, channel: 0 },
-				m3: { controller: 0, value:  0, channel: 0 },
-				m4: { controller: 0, value:  0, channel: 0 }
-			
-			}
+				var NPRN = {
+					m1: { controller: 0, value:  0, channel: 0 },
+					m2: { controller: 0, value:  0, channel: 0 },
+					m3: { controller: 0, value:  0, channel: 0 },
+					m4: { controller: 0, value:  0, channel: 0 }
+				
+				}
 
-			var getWebMidiInputsOutputs = function(){
+				var getWebMidiInputsOutputs = function(){
 
-				var $outputs = $("#webmidi-output-select");
+					var $outputs = $("#webmidi-output-select");
 
-				$.each(WebMidi.outputs, function(i,o) {
-					$outputs.append($("<option />").val(o.name).text(o.name));
+					$.each(WebMidi.outputs, function(i,o) {
+						$outputs.append($("<option />").val(o.name).text(o.name));
+					});
+
+				}
+
+				var sendNPRN = function(outputname, nprn){
+					
+					var output = WebMidi.getOutputByName(outputname);
+
+					output.sendControlChange(nprn.m1.controller, nprn.m1.value, nprn.m1.channel)
+					output.sendControlChange(nprn.m2.controller, nprn.m2.value, nprn.m2.channel)
+					output.sendControlChange(nprn.m3.controller, nprn.m3.value, nprn.m3.channel)
+					output.sendControlChange(nprn.m4.controller, nprn.m4.value, nprn.m4.channel)
+
+				}
+
+				var sendCC = function(outputname, cc){
+					
+					var output = WebMidi.getOutputByName(outputname);
+					output.sendControlChange(cc.controller, cc.value, cc.channel)
+
+				}
+
+				var sendWebMidi = function(sid){
+
+					device = $("#webmidi-output-select").val();
+
+					controller = Number($("#webmidi_controller").val());
+					value = Number($("#webmidi_value").val());
+					channel = Number($("#webmidi_channel").val());
+
+					M = { controller, value, channel }
+
+					sendCC(device, M);
+
+				}
+
+				$("#webmidi_fire").on("click", function(){
+					sendWebMidi('webmidi');
 				});
 
+				getWebMidiInputsOutputs();	
 			}
-
-			var sendNPRN = function(outputname, nprn){
-				
-				var output = WebMidi.getOutputByName(outputname);
-
-				output.sendControlChange(nprn.m1.controller, nprn.m1.value, nprn.m1.channel)
-				output.sendControlChange(nprn.m2.controller, nprn.m2.value, nprn.m2.channel)
-				output.sendControlChange(nprn.m3.controller, nprn.m3.value, nprn.m3.channel)
-				output.sendControlChange(nprn.m4.controller, nprn.m4.value, nprn.m4.channel)
-
-			}
-
-			var sendCC = function(outputname, cc){
-				
-				var output = WebMidi.getOutputByName(outputname);
-				output.sendControlChange(cc.controller, cc.value, cc.channel)
-
-			}
-
-			var sendWebMidi = function(sid){
-
-				device = $("#webmidi-output-select").val();
-
-				controller = Number($("#webmidi_controller").val());
-				value = Number($("#webmidi_value").val());
-				channel = Number($("#webmidi_channel").val());
-
-				M = { controller, value, channel }
-
-				sendCC(device, M);
-
-			}
-
-			$("#webmidi_fire").on("click", function(){
-				sendWebMidi('webmidi');
-			});
-
-			getWebMidiInputsOutputs();	
 
 		}); 
 	

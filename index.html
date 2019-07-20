@@ -145,7 +145,17 @@
 			<tr>
 				
 				<td colspan="3">
-					<div id="foooter"></div>
+					<div id="foooter">
+							<input type="button" class="mm-but mm-but-function" id="refrfeshwin" onclick="refreshUI()" value="Refresh"/>		
+							<input type="button" class="mm-but mm-but-function" id="hardreset" onclick="hardReset()" value="Reset"/>
+							<input type="button" class="mm-but mm-but-function" id="reboot" onclick="reboot()" value="Boot"/>
+							<input type="button" class="mm-but mm-but-function" id="shutdown" onclick="shutdown()" value="Shutdown"/>
+							
+							<input type=button class="mm-but mm-but-connection foo" style="cursor:pointer" onclick="window.location='/config.html'" id="config" value="Filters">
+							<input class="mm-but mm-but-script mm-txt foo foooter-but" type="text" id="filename" value="">
+							<input class="mm-but mm-but-script foo" type=button id="saveSettings" value="Save">
+							<input class="mm-but mm-but-script foo" type=button id="deleteSettings" value="Delete">
+					</div>
 				</td>
 			</tr>
 

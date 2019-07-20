@@ -15,5 +15,7 @@
 	{ "type": "transp", "paramsType": "NUMERIC", 	"title": "Transpose",		"params": ["OFFSETOCTAVES"], 			 "paramsMask": "Transpose({0})" },
 	{ "type": "gnrtor", "paramsType": "NUMERIC", 	"title": "Generator",		"params": ["TYPE","PORT","CHANNEL", "DATA1","DATA2"], 	 "paramsMask": "Generator({0},{1},{2},{3},{4})" },
 	{ "type": "frrtxt",	"paramsType": "STRING", 	"title": "Freetext",		"params": ["STRING"],	 			 	 "paramsMask": "{0}" },
-	{ "type": "progrm",	"paramsType": "STRING", 	"title": "Program",			"params": ["PROGRAM"],	 			 	 "paramsMask": "{0}" }
+	{ "type": "progrm",	"paramsType": "STRING", 	"title": "Program",			"params": ["PROGRAM"],	 			 	 "paramsMask": "{0}" },
+	{ "type": "modifi",	"paramsType": "STRING", 	"title": "Velocity",		"params": ["VELOCITY"],	 			 	 "paramsMask": "Velocity(fixed={0})" }
+
 ]
