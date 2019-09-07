@@ -1,0 +1,24 @@
+
+<style>
+	#midiklik{
+		width:100%;
+		height:80%;
+		border:1px solid black
+	}
+</style>
+<div id="message"></div>
+
+<script src="./js/vendor/jquery-3.3.1.min.js"></script>	
+<script src="js/usbmidiklik.js"></script>	
+<script src="js/ajax.js"></script>	
+<script src="./node_modules/socket.io-client/dist/socket.io.js"></script>
+
+<textarea id="midiklik"></textarea>
+
+<button onclick="connectSerialMode()">Connect Serial Mode</button>
+<button onclick="bootSerialMode()">Boot Serial Mode</button>
+<button onclick="resetMidiklik()">Reset Midiklik</button>
+<button onclick="menuChoose()">menuChoose</button>
+
+
+

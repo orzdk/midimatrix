@@ -4,7 +4,6 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install libasound2-dev libboost-all-dev scons gcc libffi-dev libssl-dev python3-dev samba samba-common-bin libgtk2.0-dev python-setuptools xrdp
 
-sudo easy_install pip
 pip install decorator --user
 
 sudo mkdir -m 1777 /home/pi/midimatrix
@@ -20,6 +19,7 @@ create mask = 0777
 directory mask = 0777
 Public = yes
 Guest ok = yes
+
 
 sudo smbpasswd -a pi
 sudo /etc/init.d/samba restart
@@ -49,5 +49,37 @@ libraries.append('boost_thread')
 
 ./setup.py build --disable-jack-midi
 ./setup.py install --disable-jack-midi
+
+Autostart:
+
+sudo nano ~/.config/lxsession/LXDE-pi/autostart
+sudo nano /etc/rc.local
+
+sudo nano /usr/local/bin/set_gpio_pins.sh
+nano /usr/local/bin/set_gpio_pins.sh
+sudo nano /usr/local/bin/set_gpio_pins.sh
+sudo chmod +x /usr/local/bin/set_gpio_pins.sh
+sudo /usr/local/bin/set_gpio_pins.sh
+sudo /usr/local/bin/set_gpio_pins.sh
+
+set_gpio_pins.sh
+----------------------
+  
+#!/bin/bash
+
+# filename: /usr/local/bin/set_gpio_pins.sh << set as executable (chmod +x)
+#
+# set GPIO pins 17, 22, and 24 to be usable without root access
+#  In fact, make them accessible to the web-server (www-data) and
+#   the 'typical' user (pi).  The 'chmod' allows user 'pi' to write
+# This script must be run as root (sudo), in root's crontab, or
+#   each of the lines in the for-loop need to start with 'sudo'
+
+for pin in 17 22 24; do
+   /usr/local/bin/gpio export $pin out
+   chown -R www-data:pi /sys/devices/virtual/gpio/gpio$pin
+   chmod -R g+w /sys/devices/virtual/gpio/gpio$pin
+done
+
 
 
