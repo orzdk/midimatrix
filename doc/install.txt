@@ -4,6 +4,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install libasound2-dev libboost-all-dev scons gcc libffi-dev libssl-dev python3-dev samba samba-common-bin libgtk2.0-dev python-setuptools xrdp
 
+sudo easy_install pip
 pip install decorator --user
 
 sudo mkdir -m 1777 /home/pi/midimatrix
@@ -19,7 +20,6 @@ create mask = 0777
 directory mask = 0777
 Public = yes
 Guest ok = yes
-
 
 sudo smbpasswd -a pi
 sudo /etc/init.d/samba restart
@@ -54,12 +54,11 @@ Autostart:
 
 sudo nano ~/.config/lxsession/LXDE-pi/autostart
 sudo nano /etc/rc.local
-
 sudo nano /usr/local/bin/set_gpio_pins.sh
+
 nano /usr/local/bin/set_gpio_pins.sh
 sudo nano /usr/local/bin/set_gpio_pins.sh
 sudo chmod +x /usr/local/bin/set_gpio_pins.sh
-sudo /usr/local/bin/set_gpio_pins.sh
 sudo /usr/local/bin/set_gpio_pins.sh
 
 set_gpio_pins.sh
@@ -80,6 +79,5 @@ for pin in 17 22 24; do
    chown -R www-data:pi /sys/devices/virtual/gpio/gpio$pin
    chmod -R g+w /sys/devices/virtual/gpio/gpio$pin
 done
-
 
 

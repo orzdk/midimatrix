@@ -1,0 +1,27 @@
+	
+	fs.writeFile("./wtffff344.txt", JSON.stringify(optionsArray), function(err) {
+	    if(err) {
+	        return console.log(err);
+	    }
+	    console.log("The file was saved!");
+	});
+
+	//F0 77 77 78 <sysex function id > <data> F7
+//INTERNAL SYSEX ARE ONLY INTERPRETED ON CABLE 0 OR MIDI IN JACK 1.
+// b0 = channel Voice    (0001)
+// b1 = system Common    (0010)
+// b2 = realTime         (0100)
+// b3 = system exlcusive (1000)
+var sysex = {
+	hardwareReset: "F0 77 77 78 0A F7",
+	serialMode: "F0 77 77 78 08 F7",
+	name: "F0 77 77 78 0B {1} F7",
+
+}
+
+var filterMasks = {
+	channelVoice: "b0",
+	systemCommon: "b1",
+	realTime: "b2",
+	sysEx: "b3"
+}

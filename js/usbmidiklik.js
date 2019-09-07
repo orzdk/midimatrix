@@ -1,64 +1,73 @@
 
-//F0 77 77 78 <sysex function id > <data> F7
-//INTERNAL SYSEX ARE ONLY INTERPRETED ON CABLE 0 OR MIDI IN JACK 1.
-// b0 = channel Voice    (0001)
-// b1 = system Common    (0010)
-// b2 = realTime         (0100)
-// b3 = system exlcusive (1000)
+var ip = "192.168.0.23:7001";
 
-var ip = "192.168.0.16:7000";
+printer = (msg) => {
 
-var sysex = {
-	hardwareReset: "F0 77 77 78 0A F7",
-	serialMode: "F0 77 77 78 08 F7",
-	name: "F0 77 77 78 0B {1} F7",
-
-}
-
-var filterMasks = {
-	channelVoice: "b0",
-	systemCommon: "b1",
-	realTime: "b2",
-	sysEx: "b3"
-}
-
-
-printer = function(msg){
 	$("#midiklik").append(msg);
 }
 
-connectSerialMode = function(msg){
-	ajaxPost('api/bootmidiklikserialmode',{}, function(midiReply){
+connectSerialMode = () => {
+	ajaxPost('api/bootconnectserialmode',{}, function(midiReply){
 		printer(JSON.stringify(midiReply));
 	});	
 }
 
-bootSerialMode = function(msg){
-	ajaxPost('api/bootonly',{}, function(midiReply){
+bootSerialMode = () => {
+	ajaxPost('api/bootserialmode',{}, function(midiReply){
 		printer(JSON.stringify(midiReply));
 	});	
 }
 
-menuChoose = function(msg){
+menuChoose = () => {
 	ajaxPost('api/menuchoose',{}, function(midiReply){
 		printer(JSON.stringify(midiReply));
 	});	
 }
 
-
-resetMidiklik = function(msg){
+resetMidiklik = () => {
 	ajaxPost('api/resetmidiklik',{}, function(midiReply){
 		printer(JSON.stringify(midiReply));
 	});	
 }
 
-$(document).ready(function(){
+getConfig = callback => {
+	ajaxPost('api/getconfig',{}, function(midiReply){
+		callback(midiReply);
+	});	
+}
+
+checkClick = (x,y, event) => {
+
+	$("#d"+event.target.id).addClass("dirty");
+}
+
+rendercheckboxes = configData => {
+
+	var t = "<table>";
+ 
+	for (i=0;i<12;i++){
+		t += "<tr>";    
+		for (k=0;k<12;k++){
+			checked = configData[i][k].optionValue ? " checked " : ""; 
+			t += "<td><div id='db" + k + i + "'><input id='b" + k + i + "' onclick='checkClick(" + k + "," + i + ",event)' type='checkbox'" + checked + "></div></td>";    
+		}
+		t += "</tr>";
+	}
+	t += "</table>";
+
+	$("body").append(t);
+}
+
+$(document).ready(() => {
 
 	var socket = io.connect(ip);
 
-	socket.on("midiklik", function(msg, d) {
+	socket.on("midiklik", (msg, d) => {
 		printer(msg);
 	});
 
+	getConfig(data => {
+		rendercheckboxes(data.routes);
+	});
 
 });

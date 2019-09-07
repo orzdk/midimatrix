@@ -325,6 +325,20 @@ getTemperature = function(callback){
 
 }
 
+
+var getMidiKikDeviceID = (callback) => {
+
+	executeShellCommand('lsusb', function(data){
+		var lines = data.stdout.split('\n');
+		for (var c=0; c<lines.length; c++){
+			if (lines[c].indexOf("1eaf") > -1){
+				callback(lines[c].split(" ")[3].substring(0,3));
+			}
+		}
+	});
+}
+
+
 /* Config Page */
 
 apiRoutes.post('/loadscriptdefinitions', function(req, res){	
@@ -638,16 +652,24 @@ apiRoutes.post('/clearallconnections', function(req, res){
 
 apiRoutes.post('/hardreset', function(req, res){	
 
-	var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/002';
+
+getMidiKikDeviceID(id=>{
+
+	var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/' + id;
 	var cmd2 = "sudo pkill -9 python";
 
 	running_scripts =  [];
 
-	executeShellCommand(cmd1, function(shellReply){
-		executeShellCommand(cmd2, function(shellReply2){
+	executeShellCommand(cmd1, (shellReply) => {
+		executeShellCommand(cmd2, (shellReply2) => {
 			res.json( {r1: shellReply, r2: shellReply2} );
 		});
 	});
+
+});
+
+
+
 
 });
 

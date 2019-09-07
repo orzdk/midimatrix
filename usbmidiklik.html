@@ -1,17 +1,24 @@
 
 <style>
+	
 	#midiklik{
 		width:100%;
-		height:80%;
+		height:40%;
 		border:1px solid black
 	}
+
+	.dirty{
+		border:2px solid red!important
+	}
+
 </style>
+
 <div id="message"></div>
 
-<script src="./js/vendor/jquery-3.3.1.min.js"></script>	
+<script src="js/vendor/jquery-3.3.1.min.js"></script>	
 <script src="js/usbmidiklik.js"></script>	
 <script src="js/ajax.js"></script>	
-<script src="./node_modules/socket.io-client/dist/socket.io.js"></script>
+<script src="node_modules/socket.io-client/dist/socket.io.js"></script>
 
 <textarea id="midiklik"></textarea>
 
@@ -19,6 +26,7 @@
 <button onclick="bootSerialMode()">Boot Serial Mode</button>
 <button onclick="resetMidiklik()">Reset Midiklik</button>
 <button onclick="menuChoose()">menuChoose</button>
+<button onclick="getConfig()">get config</button>
 
 
 

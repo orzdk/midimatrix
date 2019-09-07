@@ -8,7 +8,7 @@ var currentPatchIdx = 0;
 var semf = null;
 var unitColors;
 
-var ip = "192.168.0.21:8000";
+var ip = "192.168.0.23:8000";
 var WEB_MIDI = 1;
 
 /* Render & Refresh ---------------------------------------- */
