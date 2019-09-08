@@ -1,3 +1,27 @@
+
+// Header       = F0 77 77 78	
+// Function     = 0F
+// Action       = <00 Reset to default midi routing>
+// 	   OR  <01 Set routing +
+// 	   		. source type     = <cable=0X0 | serial=0x1>
+// 			. id              = id for cable or serial 0-3
+// 			. Midi Msg filter mask
+// 			. routing targets = <cable mask> , <jack serial mask>
+// EOX 	     = F7
+
+// 00 F7                <= reset to default midi routing
+// 01 00 00 0F 00 03 F7 <= Set Cable 0 to Jack 1,2, all midi msg
+// 01 00 00 0F 01 03 F7 <= Set Cable 0 to Cable In 0, Jack 1,2, all midi msg
+// 01 01 01 04 00 0F F7 <= Set Serial jack In 2 to all serial jack out, realtime msg only
+// 01 01 00 01 03 03 F7 <= Set Serial jack In 1 to 1,2 jack out,cable in 0,1, channel voice msg only
+
+// F0 77 77 78 0F 00 F7                <= reset to default midi routing
+// F0 77 77 78 0F 01 00 00 0F 00 03 F7 <= Set Cable 0 to Jack 1,2, all midi msg
+// F0 77 77 78 0F 01 00 00 0F 01 03 F7 <= Set Cable 0 to Cable In 0, Jack 1,2, all midi msg
+// F0 77 77 78 0F 01 01 01 04 00 0F F7 <= Set Serial jack In 2 to all serial jack out, realtime msg only
+// F0 77 77 78 0F 01 01 00 01 03 03 F7 <= Set Serial jack In 1 to 1,2 jack out,cable in 0,1, channel voice msg only
+
+
 	
 	fs.writeFile("./wtffff344.txt", JSON.stringify(optionsArray), function(err) {
 	    if(err) {
@@ -24,4 +48,71 @@ var filterMasks = {
 	systemCommon: "b1",
 	realTime: "b2",
 	sysEx: "b3"
+}
+
+	apiRoutes.post('/getconfig', (req, res) => {	
+		res.json({routes: routeInfoObjGlob});
+	});
+
+	apiRoutes.post('/resetmidiklik', (req, res) => {	
+		resetMidiKlik((usbpathinfo)=>{
+			res.json(usbpathinfo);
+		});
+	});
+
+	apiRoutes.post('/menuchoose', (req, res) => {	
+		currentFunction = "CURRENT_SETTINGS";
+		serialPort.write("0");		
+		res.sendStatus(200);
+	});
+
+	apiRoutes.post('/bootserialmode', (req, res) =>{	
+		bootMidiKlikSerialMode(()=>{
+			res.sendStatus(200);		
+		});
+	});
+
+
+var processRoutingTable = (configLineArray, callback) => {
+
+	var optionLineSequence = 0;
+	var routeInfoObj = {}
+
+	var attachInfoTo = null;
+	var simpleArrayOuter = [];
+
+	for (var configLine=0; configLine<configLineArray.length; configLine++){
+
+		line = configLineArray[configLine];
+		cableIndex = Number(line.substring(3,4))-1;
+
+		if(line.indexOf("->") > -1){
+
+			var lineSwitches = JSON.parse(JSON.stringify(lineSwitchesTemplate));
+			var simpleArrayInner = [];
+
+			for (var i=0;i<12;i++){
+				lineSwitches[i].optionValue = switchValue(line.substring(lineSwitches[i].pos,lineSwitches[i].pos+1));
+				simpleArrayInner.push(switchValue(line.substring(lineSwitches[i].pos,lineSwitches[i].pos+1)));
+			}
+
+			simpleArrayOuter.push(simpleArrayInner);
+
+			routeInfoObj[optionLineSequence] = lineSwitches;
+
+			if (optionLineSequence-1 < 4){
+				routeInfoObj[optionLineSequence]["optionInfo"] = { group: "CABLE_OUT", cableIndex }
+			} else if (optionLineSequence >= 4 && optionLineSequence < 8 ){
+				routeInfoObj[optionLineSequence]["optionInfo"]= { group: "JACK_IN", cableIndex }
+			} else {
+				routeInfoObj[optionLineSequence]["optionInfo"] = { group: "JACK_IN_THRU", cableIndex }
+			}
+
+
+			optionLineSequence++;
+		}
+	
+	}
+
+	callback(routeInfoObj, simpleArrayOuter);
 }
