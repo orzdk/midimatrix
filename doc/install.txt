@@ -61,6 +61,13 @@ sudo nano /usr/local/bin/set_gpio_pins.sh
 sudo chmod +x /usr/local/bin/set_gpio_pins.sh
 sudo /usr/local/bin/set_gpio_pins.sh
 
+https://drive.google.com/file/d/1PXwrnhAXKB1hb5J6_EfPy5zLQkqnbGba/view?usp=sharing
+
+$ unzip vl805_update_0137a8.zip
+$ chmod a+x vl805
+$ sudo ./vl805 -w vl805_fw_0137a8.bin
+$ sudo reboot
+
 set_gpio_pins.sh
 ----------------------
   
