@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var cors = require("cors");
 var fs = require('fs');
 const { exec } = require('child_process');
+const { spawn }  = require("node-pty");
 const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline')
 
@@ -39,6 +40,91 @@ var lineSwitchesTemplate = {
 	11: {position:41, controller: "JACK_OUT_4"}
 }
 
+
+
+    var ConvertBase = function (num) {
+        return {
+            from : function (baseFrom) {
+                return {
+                    to : function (baseTo) {
+                        return parseInt(num, baseFrom).toString(baseTo);
+                    }
+                };
+            }
+        };
+    };
+        
+    // binary to decimal
+    ConvertBase.bin2dec = function (num) {
+        return ConvertBase(num).from(2).to(10);
+    };
+    
+    // binary to hexadecimal
+    ConvertBase.bin2hex = function (num) {
+        return ConvertBase(num).from(2).to(16);
+    };
+    
+    // decimal to binary
+    ConvertBase.dec2bin = function (num) {
+        return ConvertBase(num).from(10).to(2);
+    };
+    
+    // decimal to hexadecimal
+    ConvertBase.dec2hex = function (num) {
+        return ConvertBase(num).from(10).to(16);
+    };
+    
+    // hexadecimal to binary
+    ConvertBase.hex2bin = function (num) {
+        return ConvertBase(num).from(16).to(2);
+    };
+    
+    // hexadecimal to decimal
+    ConvertBase.hex2dec = function (num) {
+        return ConvertBase(num).from(16).to(10);
+    };
+    
+    this.ConvertBase = ConvertBase;
+    
+
+
+var pyLumaThingy = (bitMap) => {
+
+	var t = `
+import time
+from demo_opts import get_device
+from luma.core.render import canvas
+from luma.core import legacy
+
+def main():
+    MY_CUSTOM_BITMAP_FONT = [
+        [
+            ${ bitMap } 
+        ]
+    ]
+
+    device = get_device()
+    with canvas(device) as draw:
+        legacy.text(draw, (0, 0), "\\0", fill="white", font=MY_CUSTOM_BITMAP_FONT)
+
+    time.sleep(5)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
+	`
+
+	return t;
+}
+
+
+
+
+//console.log(ledPyCode);
+
 String.prototype.replaceAll = function(search, replace) {
 
     var that = this;
@@ -52,6 +138,31 @@ var executeShellCommand = (cmd, callback) => {
 	exec(cmd, function(err, stdout, stderr){
     	callback({stdout: stdout, stderr: stderr});
 	});
+}
+
+/* LED Stuff */
+
+var sendPython = (pycode) => {
+
+	a = spawn('python', ["-c",pycode, "--interface", "spi", "--width", 8, "--height", 8, "--display", "max7219"] );
+
+	a.on("data", function(m){
+		console.log(m);
+	});
+
+}
+
+/*            */
+
+var sendSysEx = (midiklikalsaid,sysEx,callback) => {
+
+	var cmd = 'send_midi ' + midiklikalsaid + ':0 SYSEX,' + sysEx.toString().replaceAll(" ",",");
+	console.log(cmd);
+	executeShellCommand(cmd, function(rply){
+		setTimeout(() => {
+			callback();
+		},2000);
+	});	
 }
 
 var midiKlikAlsaID = (callback) => {
@@ -132,6 +243,30 @@ var bootMidiKlikSerialMode = (midiklikalsaid, callback) => {
 	});
 }
 
+pad = (padThis) => {
+	return padThis.length == 1 ? "0" + padThis : padThis;
+}
+
+createLEDCode = (routeTable) => {
+
+	//console.log(routeTable);
+    var t = "";
+ 
+	for (row=0;row<8;row++){
+		r = "";
+		for (col=4;col<12;col++){
+			r+=routeTable[row][col];    
+		}
+
+		t+= " " + "0x" + pad(ConvertBase.bin2hex(r).toString().toUpperCase());
+	}
+
+	console.log(t);
+
+ 	var pyCode = pyLumaThingy(t.trim().split(" ").join(","));
+	sendPython(pyCode);
+}
+
 var onSerial = (serialData) => {
 
 	line = serialData.toString();
@@ -139,6 +274,9 @@ var onSerial = (serialData) => {
 
 	if (line.indexOf("6.USB product string") > -1){
 		processRoutingTable(serialBuffer, (routeTable) => {
+			
+			createLEDCode(routeTable);
+
 	  		socket.sockets.emit("midiklik_obj", JSON.stringify({routeTable}));		
   			serialBuffer = [];
 			serialData = "";
@@ -250,6 +388,16 @@ apiRoutes.post('/sendsysex', (req, res) => {
 			res.sendStatus(200);
 		});
 	});
+	
+});
+
+apiRoutes.post('/ledmatrixcommand', (req, res) => {	
+
+	/* Her skal først slås tilbage til MidiMode !!!! */
+
+ 	var pyCode = pyLumaThingy(req.body.lumacodes);
+	sendPython(pyCode);
+	res.sendStatus(200);
 	
 });
 

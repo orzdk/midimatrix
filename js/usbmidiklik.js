@@ -22,6 +22,14 @@ sendSysEx = (sysex) => {
 	ajaxPost('api/sendsysex',{sysex:sysex},()=>{});
 }
 
+
+sendLED = () => {
+	lumacodes = $("#led").val();
+	console.log(lumacodes);
+	ajaxPost('api/ledmatrixcommand',{lumacodes:lumacodes},()=>{});
+
+}
+
 filterMask = (row, offset) => {
 	var bin="";
 	for(var i=0;i<4;i++){ bin += String(routeTable[row][i+offset]) }
@@ -29,7 +37,7 @@ filterMask = (row, offset) => {
 }
 
 createSysExOnClick = (row) => {
-	console.log("createSysExOnClick",row);
+
 	sourceType = row < 4 ? "00" : "01";
 	id = row > 3 ? "0" + String(row - 4) : "0" + String(row);
 	filterFilterMask = filterMask(row,0);
@@ -67,6 +75,9 @@ renderCheckboxes = () => {
 
 	$("#routeTableContainer").html("<table>" + t + "</table>");
 }
+
+
+
 
 $(document).ready(() => {
 
