@@ -55,6 +55,7 @@ translatedName = function(clientOriginalName, direction, co){
 prettyName = function(uglyName){
 	var fnn = uglyName.replaceAll('_');
 	fnn = fnn.substring(0,1).toUpperCase() + fnn.substring(1,fnn.length).toLowerCase();
+
 	return fnn;
 }
 
@@ -193,10 +194,10 @@ setFrom = function(alsaDeviceID){
 
 setTo = function(alsaDeviceID){
 
-	console.log("setFrom", alsaDeviceID);
+	console.log("setTo", alsaDeviceID);
 
 	setToRename = alsaDeviceID;
-
+ 
 	$("#setfrom" + alsaDeviceID.replace(":","_")).addClass("mm-but-selected");
 
 	if (selectedFromFoot != false){
@@ -254,7 +255,7 @@ setToScript = function(connectionID){
 	
 	clickedConnection = APP_STATE.APP_CONNECTIONS.alsaDeviceConnectionsObj[connectionID];
 
-	$(".mm-but-action").val("DISCO");
+	$(".mm-but-action").val("Disconnect");
 
 	if (selectedFromScript && selectedFromScript != ""){
 
@@ -274,6 +275,8 @@ setToScript = function(connectionID){
 /* MIDIDINGS ---------------------------------------------- */
 
 setAutoTranslations = function(runtime){
+
+	console.log(runtime);
 
 	newClient = runtime.midiDevices.alsaDevices[runtime.newClient + ":0"];
 	newClient2 = runtime.midiDevices.alsaDevices[runtime.newClient + ":1"];
@@ -459,9 +462,9 @@ renderConnections = function(){
 		iclasss = connection.to.alsaDeviceNameID.indexOf("in_") > -1 ? "mm-but mm-but-filter" : "mm-but mm-but-connection" + " uc " + unitColors[connection.to.alsaDeviceName];
 
   		$table.append("<tr>");
-  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceClientName,"outputName") + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + prettyName(translatedName(connection.from.alsaDeviceClientName,"outputName")) + "'></td>")
-  		$table.append("<td><input onclick='setToScript(\"" + connection.connectionUID + "\")' type='button' class='mm-but mm-but-action' value='DISCO'></td>")
-  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceClientName,"inputName") + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + prettyName(translatedName(connection.to.alsaDeviceClientName,"inputName")) + "'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.from.alsaDeviceClientName,"outputName", connection.from.alsaClientName) + ', ' + connection.from.alsaDeviceID + "' type='button' class='" + oclasss + "' value='" + prettyName(translatedName(connection.from.alsaDeviceClientName,"outputName")) + "'></td>")
+  		$table.append("<td><input onclick='setToScript(\"" + connection.connectionUID + "\")' type='button' class='mm-but mm-but-action' value='Disconnect'></td>")
+  		$table.append("<td><input title='" + translatedName(connection.to.alsaDeviceClientName,"inputName", connection.to.alsaClientName) + ', ' + connection.to.alsaDeviceID + "' type='button' class='" + iclasss + "' value='" + prettyName(translatedName(connection.to.alsaDeviceClientName,"inputName")) + "'></td>")
   		$table.append("</tr>");
 
 	});
@@ -470,11 +473,13 @@ renderConnections = function(){
 
 	if (APP_STATE.APP_SETTINGS && APP_STATE.APP_SETTINGS.customConnections)
 	for (var a=0;a<APP_STATE.APP_SETTINGS.customConnections.length;a++){
-		classs = "mm-but mm-but-foot";
+		classs = "mm-but mm-but-foot ";
+		classss = "mm-but mm-but-connection";
+
   		$table.append("<tr>");
-  		$table.append("<td><input type='button' class='" + classs + "' value='" + APP_STATE.APP_SETTINGS.customConnections[a].foot.replace("foot","Custom ") + "'></td>")
-  		$table.append("<td><input onclick='removeCustomConnection(\"" + outputName + "\")' type='button' class='mm-but mm-but-action' value='DISC'></td>")
-  		$table.append("<td><input type='button' class='" + classs + "' value='" +  APP_STATE.APP_SETTINGS.customConnections[a].alsaDeviceName + "'></td>")
+  		$table.append("<td><input title='Custom MIDI Send - Configure using SendMidi Checkbox' type='button' class='" + classs + "' value='" + APP_STATE.APP_SETTINGS.customConnections[a].foot.replace("foot","Custom ") + "'></td>")
+  		$table.append("<td><input onclick='removeCustomConnection(\"" + outputName + "\")' type='button' class='mm-but mm-but-action' value='Disconnect'></td>")
+  		$table.append("<td><input title='Custom MIDI Receive - Configure using SendMidi Checkbox' type='button' class='" + classss + "' value='" +  APP_STATE.APP_SETTINGS.customConnections[a].alsaDeviceName + "'></td>")
   		$table.append("</tr>");
 	}
 }
@@ -586,9 +591,11 @@ holdToRename = function(realA){
 		isFilter = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientIsFilter
 		selectedPID = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientPID;
 		selectedName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceClientName;
+		selectedCName = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaClientName;
+		selectedDeviceID = APP_STATE.APP_CONNECTIONS.alsaDevices[realA].alsaDeviceID;
 
-		outputName = translatedName(selectedName,"outputName");
-  		inputName = translatedName(selectedName,"inputName");
+		outputName = selectedDeviceID + " " + translatedName(selectedName,"outputName",selectedCName);
+  		inputName = selectedDeviceID + " " + translatedName(selectedName,"inputName",selectedCName);
 
 		$(".renamecontrol").removeClass("mm-hidden");
 

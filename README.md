@@ -2,8 +2,8 @@
 npm install
 FrontPage:
 
-![alt text](https://github.com/orzdk/midimatrix/blob/master/doc/index.png)
+![alt text](https://github.com/orzdk/midimatrix/blob/master/doc/frontpage.png)
 
 Mididings Config:
 
-![alt text](https://github.com/orzdk/midimatrix/blob/master/doc/config.png)
+![alt text](https://github.com/orzdk/midimatrix/blob/master/doc/mididingsconfig.png)

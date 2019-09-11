@@ -1,3 +1,92 @@
+var resetUSB = (cbdelay, callback) => {
+	
+	dbg("resetUSB()");
+
+	midiKlikDeviceID(id=>{
+
+		var cmd = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/' + id;
+		shell(cmd, () => {
+			setTimeout(() => {
+				callback();
+			},cbdelay);
+		});
+
+	});
+}
+
+var midiKlikDeviceID = (callback) => {
+
+	shell('lsusb', function(data){
+		var lines = data.stdout.split('\n');
+		for (var c=0; c<lines.length; c++){
+			if (lines[c].indexOf("1eaf") > -1){
+				callback(lines[c].split(" ")[3].substring(0,3));
+				break;
+			}
+		}
+	});
+}
+
+apiRoutes.post('/getRoutingInfo', (req, res) => {	
+
+	isSerialPortAvailable((serialAvailable) => {
+
+			console.log(serialAvailable);
+			console.log(serialConnected);
+
+		if(serialAvailable == true){
+			if(serialConnected == true){
+				//serialPort.write("0");
+			} else {
+				connectSerial(2000,()=>{
+					//serialPort.write("0");
+				});
+			}
+		} else {
+
+			alsaID(midiklikName, (midiklikalsaid) => {
+				if (midiklikalsaid != false){
+					bootMidiKlikSerialMode(midiklikalsaid, 2000, () => {
+						connectSerial(2000,()=>{
+							serialPort.write("0");
+							setTimeout(()=>{
+								serialPort.write("x");
+								serialPort.write("y");
+							},2000);
+						});			
+					});
+				};
+			});
+		}
+
+	});
+
+	res.sendStatus(200);	
+
+});
+
+
+
+led from main
+.....................
+
+
+sendLED = () => {
+	lumacodes = $("#led").val();
+	console.log(lumacodes);
+	ajaxPost('api/ledmatrixcommand',{lumacodes:lumacodes},()=>{});
+
+}
+
+apiRoutes.post('/ledmatrixcommand', (req, res) => {	
+
+ 	var pyCode = pyluma(req.body.lumacodes);
+	sendPython(pyCode);
+	res.sendStatus(200);
+	
+});
+
+
 
 // Header       = F0 77 77 78	
 // Function     = 0F
@@ -20,6 +109,46 @@
 // F0 77 77 78 0F 01 00 00 0F 01 03 F7 <= Set Cable 0 to Cable In 0, Jack 1,2, all midi msg
 // F0 77 77 78 0F 01 01 01 04 00 0F F7 <= Set Serial jack In 2 to all serial jack out, realtime msg only
 // F0 77 77 78 0F 01 01 00 01 03 03 F7 <= Set Serial jack In 1 to 1,2 jack out,cable in 0,1, channel voice msg only
+
+var midiKlikDeviceID = (callback) => {
+
+	shell('lsusb', function(data){
+		var lines = data.stdout.split('\n');
+		for (var c=0; c<lines.length; c++){
+			if (lines[c].indexOf("1eaf") > -1){
+				callback(lines[c].split(" ")[3].substring(0,3));
+				break;
+			}
+		}
+	});
+}
+
+var processRoutingTable = (configLineArray, callback) => {
+
+	console.log(configLineArray);
+
+	var routingTable = [];
+
+	for (var lineNum=0; lineNum<configLineArray.length; lineNum++){
+
+		textLine = configLineArray[lineNum];
+
+		if(textLine.indexOf("->") > -1){
+			var lineSwitches = JSON.parse(JSON.stringify(lineSwitchesTemplate));
+
+			var routingTableLine = [];
+
+			for (var i=0;i<12;i++){
+				switchPos = lineSwitches[i].position;
+				routingTableLine.push(switchValue(textLine.substring(switchPos,switchPos+1)));
+			}
+
+			routingTable.push(routingTableLine);
+		}
+	}
+
+	callback(routingTable);
+}
 
 
 	

@@ -82,5 +82,29 @@
   "out_1_ctos3_mididings": {
     "inputName": "ctos3",
     "outputName": "ctos3"
+  },
+  "in_1_noprgchg_mididings": {
+    "inputName": "noprgchg",
+    "outputName": "noprgchg"
+  },
+  "out_1_noprgchg_mididings": {
+    "inputName": "noprgchg",
+    "outputName": "noprgchg"
+  },
+  "USB MIDIKliK 4x4 MIDI 1_USB MIDIKliK 4x4": {
+    "inputName": "MidiKlik200",
+    "outputName": "MidiKlik200"
+  },
+  "USB MIDIKliK 4x4 MIDI 2_USB MIDIKliK 4x4": {
+    "inputName": "MidiKlik201",
+    "outputName": "MidiKlik201"
+  },
+  "USB MIDIKliK 4x4 MIDI 3_USB MIDIKliK 4x4": {
+    "inputName": "MidiKlik202",
+    "outputName": "MidiKlik202"
+  },
+  "USB MIDIKliK 4x4 MIDI 4_USB MIDIKliK 4x4": {
+    "inputName": "MidiKlik203",
+    "outputName": "MidiKlik203"
   }
 }

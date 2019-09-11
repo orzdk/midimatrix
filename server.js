@@ -31,7 +31,6 @@ String.prototype.replaceAll = function(search, replace) {
 
     var that = this;
     return that.replace(new RegExp(search, 'g'), replace);
-
 }
 
 Array.prototype.remove = function() {
@@ -44,7 +43,6 @@ Array.prototype.remove = function() {
         }
     }
     return this;
-
 }
 	
 spawnShellCommand = function(cmd, callback){
@@ -208,7 +206,7 @@ parseConnectionList = function(data, data2, callback){
 								alsaDeviceNameID: alsaDeviceName,				/* UM-ONE MIDI 1 (1)	*/														
 								alsaDeviceOriginalName: alsaDeviceName,			/* UM-ONE MIDI 1		*/
 
-								alsaDeviceClientName: alsaDeviceName + "_" + alsaClientName, 
+								alsaDeviceClientName: alsaDeviceName + "_" + alsaClientName, /* UM-ONE MIDI 1_UM-ONE */
 		
 								alsaDeviceIO: getIO(alsaDeviceName),
 
@@ -325,8 +323,7 @@ getTemperature = function(callback){
 
 }
 
-
-var getMidiKikDeviceID = (callback) => {
+getMidiKlikDeviceID = (callback) => {
 
 	executeShellCommand('lsusb', function(data){
 		var lines = data.stdout.split('\n');
@@ -336,6 +333,7 @@ var getMidiKikDeviceID = (callback) => {
 			}
 		}
 	});
+
 }
 
 
@@ -661,15 +659,11 @@ getMidiKikDeviceID(id=>{
 	running_scripts =  [];
 
 	executeShellCommand(cmd1, (shellReply) => {
-		executeShellCommand(cmd2, (shellReply2) => {
-			res.json( {r1: shellReply, r2: shellReply2} );
+			executeShellCommand(cmd2, (shellReply2) => {
+				res.json( {r1: shellReply, r2: shellReply2} );
+			});
 		});
 	});
-
-});
-
-
-
 
 });
 
