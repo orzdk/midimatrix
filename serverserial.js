@@ -117,6 +117,11 @@ var lightUp = () => {
 	shellPython(pyluma.pyLuma(createLEDCommand(currentRoutes.routes)));
 }
 
+var lightUp2 = (routes) => {
+
+	shellPython(pyluma.pyLuma(createLEDCommand(routes.routes)));
+}
+
 var lightDown = () => {	
 	
 	var off = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
@@ -149,6 +154,7 @@ apiRoutes.post('/getRoutingInfo', (req, res) => {
 					MidiKlik.connectSerial();
 		
 					MidiKlik.on('routes', (routes) => {
+						lightUp2(routes);
 					    socket.sockets.emit("midiklik_routes", routes);	 
 					});
 
