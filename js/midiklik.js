@@ -284,6 +284,7 @@ const MidiKlik = class extends EventEmitter {
 	bootToMidiMode(){
 
 		this.emit("mk_message","boot_to_midi_mode");
+		this.currentRoutes = {}
 
 		var that = this;
 

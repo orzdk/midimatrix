@@ -66,7 +66,7 @@ createSysExOnCheckboxClick = (row) => {
 	cableFilterMask = filterMask(row, 0, routeTable.routes);
 	jackFilterMask = filterMask(row, 4, routeTable.routes);
 
-	sysEx = "F0 77 77 78 01 " + sourceType + " | " + id + " | " + filterFilterMask + " | " + cableFilterMask + " | " + jackFilterMask + " | " + " F7";
+	sysEx = "F0 77 77 78 0F 01 " + sourceType + " " + id + " " + filterFilterMask + " " + cableFilterMask + " " + jackFilterMask + " F7";
 	
 	return sysEx;
 }
@@ -84,7 +84,7 @@ checkClick = (row,col,event) => {
 
 	$("#serialCharToSend").val(sysEx);
 
-	//ajaxPost('api/sendsysex',{sysex:sysEx},()=>{});
+	ajaxPost('api/sendsysex',{sysex:sysEx},()=>{});
 }
 
 
