@@ -8,6 +8,8 @@ var cors = require('cors')
 const { exec } = require('child_process');
 const { spawn }  = require("node-pty");
 
+var midiklik = require('./js/midiklik.js');
+
 port = 8000;
 
 var app = express(); 
@@ -22,10 +24,28 @@ var socket = require("socket.io").listen(server);
 var apiRoutes = express.Router(); 
 var socketRoutes = express.Router(); 
 
-var operationTimeout = 2150;
+var operationTimeout = 2500;
 var running_scripts =  [];
 
 console.log("MidiMatrix & socket.io @ http://localhost:" + port + ", CTRL + C to shutdown");
+
+
+/* MidiKLiK injection ---------------------------------------------------------------*/
+
+MidiKlik = new midiklik("MuchoMIDI3x");
+
+MidiKlik.on('mk_routes', (data) => {
+	MidiKlik.LedWrapper.lightUp(data.routes);
+    socket.sockets.emit("mk_routes", data);	 
+});
+
+MidiKlik.on('mk_message', (message) => {
+	MidiKlik.LedWrapper.light_M();
+	socket.sockets.emit("mk_message", message);	 
+});
+
+/* ----------------------------------------------------------------------------------*/
+
 
 String.prototype.replaceAll = function(search, replace) {
 
@@ -716,6 +736,50 @@ apiRoutes.post('/sendmidi', function(req, res){
 	});
 
 });
+
+/* UsbMidiKlik temporary crude injection BEGIN */
+
+apiRoutes.post('/sendsysex', (req, res) => {	
+	MidiKlik.sendSysEx(req.body.sysex);
+});
+
+apiRoutes.post('/requestconfiguration', (req, res) => {	
+	MidiKlik.requestConfiguration();
+    res.sendStatus(200);	
+});
+
+apiRoutes.post('/boottomidimode', (req, res) => {	
+	MidiKlik.bootToMidiMode();
+	res.sendStatus(200);	
+});
+
+apiRoutes.post('/boottoserialmode', (req, res) => {	
+	MidiKlik.bootToSerialMode();
+	res.sendStatus(200);	
+});
+
+apiRoutes.post('/sendserialchar', (req, res) => {	
+	if (Object.keys(MidiKlik.serialPort).length > 0){
+		MidiKlik.serialPort.write(req.body.char);
+		res.sendStatus(200);
+	} else {
+		res.sendStatus(404);
+	}
+});
+
+apiRoutes.post('/lightup', (req, res) => {	
+	MidiKlik.LedWrapper.lightUp(MidiKlik.currentRoutes.routes);
+	res.sendStatus(200);	
+});
+
+apiRoutes.post('/lightdown', (req, res) => {	
+	MidiKlik.LedWrapper.lightDown();
+	res.sendStatus(200);	
+});
+
+
+/* UsbMidiKlik temporary crude injection END */
+
 
 app.use('/api', apiRoutes);
 

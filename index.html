@@ -10,7 +10,6 @@
 
 	<script src="./js/vendor/jquery-3.3.1.min.js"></script>	
 	<script src="./js/vendor/webmidi@2.0.0.js"></script>	
-	<!--<script src="./node_modules/socket.io-client/dist/socket.io.js"></script>-->
 	<script src="./node_modules/socket.io-client/dist/socket.io.slim.js"></script>
 	<script src="./node_modules/async/dist/async.min.js"></script>
 
@@ -75,12 +74,6 @@
 					<hr>
 
 					<span id="sendMidiSpan" class="mm-hidden">
-					
-					<!--
-					<label><input checked type="checkbox" id="cbfootblock" class="footcb footfoot">Foot 1/2</label>
-					<label><input type="checkbox" id="cbprevnext" class="footcb footpn">Prev/Next</label>
-					<label><input type="checkbox" id="cbwebmidi" class="footcb footwebmidi">;
-					-->
 
 					<label>Webmidi Output&nbsp;<select class="footselect" id="webmidi-output-select"></select></label>
 					
@@ -163,9 +156,40 @@
 		</table>
 	</div>
 
+	<h1>USBMidiKLik</h1><br>
+	<textarea class="msgtxt" id="midiklik_message"></textarea>
+
+	<br>
+
+	<input type="text" id="serialCharToSend" value="">
+
+	<table>
+		<tr>
+			<td>Filters</td>
+			<td>Routing</td>
+		</tr>
+		<tr>
+			<td><div id="filterTableContainer"></div></td>	
+			<td><div id="routeTableContainer"></div></td>
+		</tr>
+	</table>
+
+	<br>
+	
+	<button onclick="_requestRouteInfo()">getRoutingInfo</button>
+	<button onclick="_bootToMidiMode()">backToMidiMode</button>
+	<button onclick="_bootToSerialMode()">bootToSerialMode</button>
+	<button onclick="_sendSerialChar()">sendSerialChar</button>
+	<button onclick="_setMidiKlikName()">set name</button>
+	<button onclick="_lightUp()">lightUp</button>
+	<button onclick="_lightDown()">lightDown</button>
+
+
 	<script src="./js/ajax.js"></script>
 	<script src="./js/common.js"></script>
 	<script src="./js/index.js"></script>
+	<script src="./js/usbmidiklik.js"></script>	
+	<script src="./js/baseconverter.js"></script>
 
 </body>
 </html>

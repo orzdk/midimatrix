@@ -32,7 +32,6 @@ render = function(){
 refresh = function(callback){
 	ajaxPost('api/getsystemstate', null, function(appState){
 		APP_STATE = appState;
-		console.log(APP_STATE);
 		if (callback) callback(); else render();
 	});
 }

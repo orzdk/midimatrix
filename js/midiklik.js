@@ -2,13 +2,15 @@
 const { exec } = require('child_process');
 const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline')
-const async = require('async');
 const EventEmitter = require('events');
+const ledwrapper = require('./ledwrapper.js');
 
 const DEFAULT_EOM = "6.USB product string"
 const SERIAL_MODE_SYSEX = "F0 77 77 78 08 F7";
-const SERIAL_MODE_SYSEX_WAIT = 2250;
-const DEFAULT_WAIT = 1750;
+const SERIAL_MODE_SYSEX_WAIT = 2500;
+const DEFAULT_WAIT = 2500;
+
+const serialPortPath = "/dev/midiklik";
 
 String.prototype.replaceAll = function(search, replace) {
     var that = this;
@@ -23,7 +25,7 @@ var shell = (cmd, callback) => {
 
 const MidiKlik = class extends EventEmitter {
 
-	constructor() {
+	constructor(_midiInterfaceName) {
 		
 		super();
 
@@ -44,10 +46,20 @@ const MidiKlik = class extends EventEmitter {
 		this.serialBuffer = [];   
 		this.lineStream = {};
 		
-		this.midiklikName = 'guapomidi';
+		this.midiklikName = _midiInterfaceName;
 		this.midiklikAlsaClientID = "";
-		this.currentRoutes = {};
+		this.currentRoutes = {};	
+
+		this.LedWrapper = new ledwrapper();
     }
+
+	keyCount(obj){
+		if(obj){
+			return Object.keys(obj).length;
+		} else {
+			return 0;
+		}
+	}
 
 	alsaID(name, callback){
 		var rv = false;
@@ -70,13 +82,14 @@ const MidiKlik = class extends EventEmitter {
 			if (alsaClientID != false){
 
 				var cmd = 'send_midi ' + alsaClientID + ':0 SYSEX,' + sysEx.toString().replaceAll(" ",",");
+				
 				shell(cmd, (shellReply) => {
-					this.emit('mk_message', 'success' + cmd + JSON.stringify(shellReply));
+					this.emit('mk_message', cmd);
 					if (callback) callback(true);
 				});	
 
 			} else {
-				this.emit('mk_message', 'fail_no_alsa' + this.midiklikName);
+				this.emit('mk_message', 'no_alsa ' + this.midiklikName);
 				if (callback) callback(false);
 
 			}
@@ -124,37 +137,29 @@ const MidiKlik = class extends EventEmitter {
 	checkCurrentConnectionStatus(callback){
 
 		let status = {
-			ttyACM0: false,
+			serialPortPath: false,
 			currentRoutes: false,
 			portOpen: false
 		}
 
 		let that = this;
 
-		shell('ls /dev/ttyACM0', function(ls){
+		shell('ls ' + serialPortPath, function(ls){
 
-			if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
-				status.ttyACM0 = true;
+			if (ls.stdout.indexOf(serialPortPath) > -1){
+				status.serialPortPath = true;
 			}
 
-			if(Object.keys(that.currentRoutes).length > 0 ){
+			if(that.keyCount(that.currentRoutes) > 0 ){
 				status.currentRoutes = true;
 			}
 
-			if(Object.keys(that.serialPort).length > 0){
+			if(that.keyCount(that.serialPort) > 0){
 				status.portOpen = true;
 			}
 
 			callback(status);			
 		});
-	}
-
-	keyCount(obj){
-		if(obj){
-			return Object.keys(obj).length;
-		} else {
-			return 0;
-		}
 	}
 
 	requestConfiguration(){
@@ -170,13 +175,14 @@ const MidiKlik = class extends EventEmitter {
 			if(currentStatus.currentRoutes == true){
 				that.emit('mk_routes', that.currentRoutes);
 			} else {
-				if(currentStatus.ttyACM0 == true){
+				if(currentStatus.serialPortPath == true){
 					if (currentStatus.portOpen == false) {
-						that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+						that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
 						that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
 						that.lineStream.on('data', (serialData) =>{
 							let line = serialData.toString();
 							that.serialBuffer.push(line);	
+
 							if (line.indexOf(DEFAULT_EOM) > -1){
 								let routes = that.processRoutingTable(that.serialBuffer);
 								that.serialBuffer = [];	
@@ -195,11 +201,16 @@ const MidiKlik = class extends EventEmitter {
 					}
 				}
 			    else {
+			    	that.emit('mk_message', "pls_wait_booting_serial");	
+
 					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
+						
 						setTimeout(()=>{
-							that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+
+							that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
 							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
 							that.lineStream.on('data', (serialData) =>{
+						
 								let line = serialData.toString();
 								that.serialBuffer.push(line);	
 								if (line.indexOf(DEFAULT_EOM) > -1){
@@ -211,10 +222,13 @@ const MidiKlik = class extends EventEmitter {
 								  	};
 								}
 							});							
+					
 							setTimeout(()=>{
 								that.serialPort.write("0");
 							},DEFAULT_WAIT);
+							
 						},SERIAL_MODE_SYSEX_WAIT);
+
 					});
 				}
 			}	
@@ -232,12 +246,13 @@ const MidiKlik = class extends EventEmitter {
 
 			that.emit("mk_message",currentStatus);
 
-			shell('ls /dev/ttyACM0', function(ls){
-				if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
-					that.emit("mk_message","ttyamc0_available");
+			if(currentStatus.serialPortPath == false){
+
+					that.emit("mk_message", serialPortPath + "available");
 					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
+
 						setTimeout(()=>{
-							that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+							that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
 							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
 							that.lineStream.on('data', (serialData) =>{
 								let line = serialData.toString();
@@ -250,40 +265,37 @@ const MidiKlik = class extends EventEmitter {
 										that.emit('mk_routes', routes);	
 								  	};
 								}
-							});							
+							});		
+
 							setTimeout(()=>{
 								that.serialPort.write("0");
 							},DEFAULT_WAIT);
+
 						},SERIAL_MODE_SYSEX_WAIT);
 					});
+
 				} else{
 					that.emit("mk_message","already in serial");
 				}
-			});
+
 		});
 	}
-
 
 	bootToMidiMode(){
 
 		this.emit("mk_message","boot_to_midi_mode");
+
 		var that = this;
-		shell('ls /dev/ttyACM0', function(ls){
-			if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
-				that.emit("mk_message","ttyamc0_available");
+
+		that.checkCurrentConnectionStatus((currentStatus) => {
+
+			if(currentStatus.serialPortPath == true){
+			
+				that.emit("mk_message", serialPortPath + "_available");
+
 				if(that.keyCount(that.serialPort) > 0){
+					
 					that.emit("mk_message","serialport_object_exist");
-						that.serialPort.write("x");
-						setTimeout(()=>{
-							that.serialPort.write("y");
-							setTimeout(()=>{
-								that.serialPort = {};
-							},500);
-						},1000);
-				}
-				else {
-					that.emit("mk_message","serialport_object_not_exist");
-					that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
 					that.serialPort.write("x");
 					setTimeout(()=>{
 						that.serialPort.write("y");
@@ -292,11 +304,25 @@ const MidiKlik = class extends EventEmitter {
 						},500);
 					},1000);
 				}
+				else {
+					that.emit("mk_message","serialport_object_not_exist");
+
+					that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
+					that.serialPort.write("x");
+					setTimeout(()=>{
+						that.serialPort.write("y");
+						setTimeout(()=>{
+							that.serialPort = {};
+						},500);
+					},1000);
+				}
+
 			} else {
-				that.emit("mk_message","ttyamc0_not_available, already in midi mode");
+				that.emit("mk_message",serialPortPath + "_not_available");
 			}
 
 		});	
+
 	}
 
 }

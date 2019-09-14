@@ -446,3 +446,21 @@ td{
 	background-color: white!important;
 	color: #dddddd!important;
 }
+
+
+#serialCharToSend{
+	width:400px
+}
+
+#filterTableContainer{
+	background-color: lightblue
+}
+
+#routeTableContainer{
+	background-color: lightgreen
+}
+
+#midiklik_message{
+	width:600px;
+	height: 100px
+}
