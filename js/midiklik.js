@@ -2,7 +2,18 @@
 const { exec } = require('child_process');
 const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline')
+const async = require('async');
 const EventEmitter = require('events');
+
+const DEFAULT_EOM = "6.USB product string"
+const SERIAL_MODE_SYSEX = "F0 77 77 78 08 F7";
+const SERIAL_MODE_SYSEX_WAIT = 2250;
+const DEFAULT_WAIT = 1750;
+
+String.prototype.replaceAll = function(search, replace) {
+    var that = this;
+    return that.replace(new RegExp(search, 'g'), replace);
+}
 
 var shell = (cmd, callback) => {
 	exec(cmd, function(err, stdout, stderr){
@@ -31,7 +42,47 @@ const MidiKlik = class extends EventEmitter {
 
 		this.serialPort = {};
 		this.serialBuffer = [];   
+		this.lineStream = {};
+		
+		this.midiklikName = 'guapomidi';
+		this.midiklikAlsaClientID = "";
+		this.currentRoutes = {};
     }
+
+	alsaID(name, callback){
+		var rv = false;
+		shell('sudo aconnect -l', function(data){
+			var lines = data.stdout.split('\n');
+			for (let c=0; c<lines.length; c++){
+				if (lines[c].indexOf(name) > -1 && lines[c].indexOf("type=kernel") > -1){
+					rv = lines[c].split(":")[0].split(" ")[1];
+					break;
+				}
+			}
+			callback(rv);
+		});		
+	}
+
+	sendSysEx(sysEx, callback){
+
+		this.alsaID(this.midiklikName, (alsaClientID) => {
+
+			if (alsaClientID != false){
+
+				var cmd = 'send_midi ' + alsaClientID + ':0 SYSEX,' + sysEx.toString().replaceAll(" ",",");
+				shell(cmd, (shellReply) => {
+					this.emit('mk_message', 'success' + cmd + JSON.stringify(shellReply));
+					if (callback) callback(true);
+				});	
+
+			} else {
+				this.emit('mk_message', 'fail_no_alsa' + this.midiklikName);
+				if (callback) callback(false);
+
+			}
+
+		});
+	}
 
 	switchValue(s) {
 
@@ -70,47 +121,158 @@ const MidiKlik = class extends EventEmitter {
 		return data;
 	}
 
-	connectSerial(command, callback){
+	checkCurrentConnectionStatus(callback){
 
-		var that = this;
+		let status = {
+			ttyACM0: false,
+			currentRoutes: false,
+			portOpen: false
+		}
+
+		let that = this;
 
 		shell('ls /dev/ttyACM0', function(ls){
 
 			if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
+				status.ttyACM0 = true;
+			}
 
-				if(Object.keys(that.serialPort).length == 0){
+			if(Object.keys(that.currentRoutes).length > 0 ){
+				status.currentRoutes = true;
+			}
 
-					that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
-					const lineStream = that.serialPort.pipe(new Readline("\r\n"));
+			if(Object.keys(that.serialPort).length > 0){
+				status.portOpen = true;
+			}
 
-					setTimeout(()=>{
+			callback(status);			
+		});
+	}
 
-						that.serialPort.write("0");
+	keyCount(obj){
+		if(obj){
+			return Object.keys(obj).length;
+		} else {
+			return 0;
+		}
+	}
 
-						lineStream.on('data', (serialData) => {
+	requestConfiguration(){
 
+		var that = this;
+
+		that.emit("mk_message","config_request");
+
+		that.checkCurrentConnectionStatus((currentStatus) => {
+
+			that.emit("mk_message",currentStatus);
+
+			if(currentStatus.currentRoutes == true){
+				that.emit('mk_routes', that.currentRoutes);
+			} else {
+				if(currentStatus.ttyACM0 == true){
+					if (currentStatus.portOpen == false) {
+						that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+						that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+						that.lineStream.on('data', (serialData) =>{
 							let line = serialData.toString();
 							that.serialBuffer.push(line);	
-
-							if (line.indexOf("6.USB product string") > -1){
-
+							if (line.indexOf(DEFAULT_EOM) > -1){
 								let routes = that.processRoutingTable(that.serialBuffer);
-
-								if (Object.keys(routes.routes).length > 0){
-									 that.emit('routes', routes);	
+								that.serialBuffer = [];	
+								if (that.keyCount(routes.routes) > 0){
+									that.currentRoutes = routes;						
+									that.emit('mk_routes', routes);	
 							  	};
-
-								that.serialBuffer = [];
 							}
-
 						});
+						setTimeout(()=>{
+							that.serialPort.write("0");
+						},DEFAULT_WAIT);
+					}
+					else {
+						that.serialPort.write("0");
+					}
+				}
+			    else {
+					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
+						setTimeout(()=>{
+							that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+							that.lineStream.on('data', (serialData) =>{
+								let line = serialData.toString();
+								that.serialBuffer.push(line);	
+								if (line.indexOf(DEFAULT_EOM) > -1){
+									let routes = that.processRoutingTable(that.serialBuffer);
+									that.serialBuffer = [];
+									if (that.keyCount(routes.routes) > 0){
+										that.currentRoutes = routes;
+										that.emit('mk_routes', routes);	
+								  	};
+								}
+							});							
+							setTimeout(()=>{
+								that.serialPort.write("0");
+							},DEFAULT_WAIT);
+						},SERIAL_MODE_SYSEX_WAIT);
+					});
+				}
+			}	
 
-					},500);
+		});
+	}
+	
+	bootToSerialMode(){
 
-				} else {
+		var that = this;
 
-					if (command == 'midimode') {
+		that.emit("mk_message","bootToSerial");
 
+		that.checkCurrentConnectionStatus((currentStatus) => {
+
+			that.emit("mk_message",currentStatus);
+
+			shell('ls /dev/ttyACM0', function(ls){
+				if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
+					that.emit("mk_message","ttyamc0_available");
+					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
+						setTimeout(()=>{
+							that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+							that.lineStream.on('data', (serialData) =>{
+								let line = serialData.toString();
+								that.serialBuffer.push(line);	
+								if (line.indexOf(DEFAULT_EOM) > -1){
+									let routes = that.processRoutingTable(that.serialBuffer);
+									that.serialBuffer = [];
+									if (that.keyCount(routes.routes) > 0){
+										that.currentRoutes = routes;
+										that.emit('mk_routes', routes);	
+								  	};
+								}
+							});							
+							setTimeout(()=>{
+								that.serialPort.write("0");
+							},DEFAULT_WAIT);
+						},SERIAL_MODE_SYSEX_WAIT);
+					});
+				} else{
+					that.emit("mk_message","already in serial");
+				}
+			});
+		});
+	}
+
+
+	bootToMidiMode(){
+
+		this.emit("mk_message","boot_to_midi_mode");
+		var that = this;
+		shell('ls /dev/ttyACM0', function(ls){
+			if (ls.stdout.indexOf('/dev/ttyACM0') > -1){
+				that.emit("mk_message","ttyamc0_available");
+				if(that.keyCount(that.serialPort) > 0){
+					that.emit("mk_message","serialport_object_exist");
 						that.serialPort.write("x");
 						setTimeout(()=>{
 							that.serialPort.write("y");
@@ -118,16 +280,25 @@ const MidiKlik = class extends EventEmitter {
 								that.serialPort = {};
 							},500);
 						},1000);
-
-					}
-
 				}
-
+				else {
+					that.emit("mk_message","serialport_object_not_exist");
+					that.serialPort = new SerialPort("/dev/ttyACM0", that.serialPortOptions); 
+					that.serialPort.write("x");
+					setTimeout(()=>{
+						that.serialPort.write("y");
+						setTimeout(()=>{
+							that.serialPort = {};
+						},500);
+					},1000);
+				}
+			} else {
+				that.emit("mk_message","ttyamc0_not_available, already in midi mode");
 			}
 
 		});	
 	}
-	
+
 }
 
-module.exports.MidiKlik = MidiKlik;
+module.exports = MidiKlik;

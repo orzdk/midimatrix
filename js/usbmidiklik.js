@@ -2,16 +2,25 @@
 var ip = "192.168.0.23:7001";
 var routeTable = {};
 
-printer = (msg, type) => {
-	$("#" + type).append(msg);
+printer = (msg) => {
+	var msgtosend = "";
+
+	if (typeof msg === 'string' || msg instanceof String){
+		msgtosend = msg;
+	}
+	else {
+		msgtosend = JSON.stringify(msg);
+	}
+
+	$("#midiklik_message").append(msgtosend + "\r\n");
 }
 
 bGetRoutingInfo = () => {
-	ajaxPost('api/getRoutingInfo',{},()=>{});	
+	ajaxPost('api/requestconfiguration',{},()=>{});	
 }
 
-bBackToMidiMode = () => {
-	ajaxPost('api/backtomidimode',{},()=>{});
+bBootToMidiMode = () => {
+	ajaxPost('api/boottomidimode',{},()=>{});
 }
 
 bSendSerialChar = () => {
@@ -36,20 +45,21 @@ filterMask = (row, offset, lookin) => {
 	return "0" + ConvertBase.bin2hex(bin).toString().toUpperCase();
 }
 
-createSysExOnCheckboxClick = (row) => {
-	sourceType = row < 4 ? "00" : "01";
-	id = row > 3 ? "0" + String(row - 4) : "0" + String(row);
-
-	filterFilterMask = filterMask(row, 0, routeTable.filters);
-	cableFilterMask = filterMask(row, 0, routeTable.routes);
-	jackFilterMask = filterMask(row, 4, routeTable.routes);
-
-	sysEx = "F0 77 77 78 01 " + sourceType + " " + id + " " + filterFilterMask + " " + cableFilterMask + " " + jackFilterMask + " " + "F7";
-	
-	return sysEx;
-}
-
 checkClick = (row,col,event) => {
+
+	createSysExOnCheckboxClick = (row) => {
+		sourceType = row < 4 ? "00" : "01";
+		id = row > 3 ? "0" + String(row - 4) : "0" + String(row);
+
+		filterFilterMask = filterMask(row, 0, routeTable.filters);
+		cableFilterMask = filterMask(row, 0, routeTable.routes);
+		jackFilterMask = filterMask(row, 4, routeTable.routes);
+
+		sysEx = "F0 77 77 78 01 " + sourceType + " " + id + " " + filterFilterMask + " " + cableFilterMask + " " + jackFilterMask + " " + "F7";
+		
+		return sysEx;
+	}
+
 	if (event.target.id.substring(0,1) == 'r'){
 		routeTable.routes[row][col] = routeTable.routes[row][col] == 0 ? 1 : 0;
 	} else if (event.target.id.substring(0,1) == 'f'){
@@ -59,6 +69,30 @@ checkClick = (row,col,event) => {
 	sysex = createSysExOnCheckboxClick(row);
 	$("#serialCharToSend").val(sysex);
 	//sendSysEx(sysex);
+}
+
+String.prototype.hexEncode = function(){
+    var hex, i;
+
+    var result = "";
+    for (i=0; i<this.length; i++) {
+        hex = this.charCodeAt(i).toString(16);
+        result += (hex).slice(-4);
+    }
+
+    return result
+}
+
+setMidiKlikName = () => {
+	
+	let name = $("#serialCharToSend").val();
+
+	let nameHex = "67 75 61 70 6f 6d 69 64 69"; // 
+	let nh2 = name.hexEncode().match(/.{1,2}/g).join(" ");
+
+	let sysEx = "F0 77 77 78 0B " + nh2 + " F7";
+
+	sendSysEx(sysEx);
 }
 
 renderCheckboxes = (rt, renderContainer, rows, cols, type, code) => {
@@ -84,17 +118,17 @@ $(document).ready(() => {
 
 	var socket = io.connect(ip);
 
-	socket.on("midiklik_message", (msg, d) => {
-		printer(msg,"midiklik_message");
+	socket.on("mk_message", (message, d) => {
+		printer(message);
+
 	});
 
-	socket.on("midiklik_routes", (routeMsg, d) => {
+	socket.on("mk_routes", (data, d) => {		
+		printer("[data]");
 
-		if (routeMsg.routes.length > 0 && routeMsg.filters.length > 0){
-			routeTable = routeMsg;
-			renderCheckboxes(routeMsg.routes, "#routeTableContainer", 8, 8, "route", "r");
-			renderCheckboxes(routeMsg.filters, "#filterTableContainer", 8, 4, "filter", "f");
-		}
+		routeTable = data;
+		renderCheckboxes(data.routes, "#routeTableContainer", 8, 8, "route", "r");
+		renderCheckboxes(data.filters, "#filterTableContainer", 8, 4, "filter", "f");
 	});
 
 });

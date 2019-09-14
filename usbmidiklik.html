@@ -22,8 +22,7 @@
 <script src="js/usbmidiklik.js"></script>	
 <script src="js/ajax.js"></script>	
 <script src="js/common.js"></script>	
-	<!--<script src="./node_modules/socket.io-client/dist/socket.io.js"></script>-->
-	<script src="./node_modules/socket.io-client/dist/socket.io.slim.js"></script>
+<script src="./node_modules/socket.io-client/dist/socket.io.slim.js"></script>
 <script src="js/baseconverter.js"></script>
 
 <link rel="stylesheet" href="./css/usbmidiklik.css" media="screen">
@@ -31,7 +30,7 @@
 <body>
 	
 	<textarea class="msgtxt" id="midiklik_message"></textarea><br>
-	<input type="text" id="serialCharToSend" value="0">
+	<input type="text" id="serialCharToSend" value="guapomidi">
 
 	<h1>Filters&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Routing</h1>
 
@@ -41,9 +40,10 @@
 	</tr></table>
 
 	<button onclick="bGetRoutingInfo()">getRoutingInfo</button>
-	<button onclick="bBackToMidiMode()">backToMidiMode</button>
+	<button onclick="bBootToMidiMode()">backToMidiMode</button>
 
 	<button onclick="bSendSerialChar()">sendSerialChar</button>
+	<button onclick="setMidiKlikName()">set name</button>
 	<button onclick="lightUp()">lightUp</button>
 	<button onclick="lightDown()">lightDown</button>
 

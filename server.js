@@ -650,15 +650,14 @@ apiRoutes.post('/clearallconnections', function(req, res){
 
 apiRoutes.post('/hardreset', function(req, res){	
 
+	getMidiKlikDeviceID(id=>{
 
-getMidiKikDeviceID(id=>{
+		var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/' + id;
+		var cmd2 = "sudo pkill -9 python";
 
-	var cmd1 = 'sudo /home/pi/midimatrix/tools/usbreset /dev/bus/usb/001/' + id;
-	var cmd2 = "sudo pkill -9 python";
+		running_scripts =  [];
 
-	running_scripts =  [];
-
-	executeShellCommand(cmd1, (shellReply) => {
+		executeShellCommand(cmd1, (shellReply) => {
 			executeShellCommand(cmd2, (shellReply2) => {
 				res.json( {r1: shellReply, r2: shellReply2} );
 			});
