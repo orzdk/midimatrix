@@ -452,6 +452,10 @@ td{
 	width:400px
 }
 
+#serialCharToSend2{
+	width:400px
+}
+
 #filterTableContainer{
 	background-color: lightblue
 }
@@ -462,5 +466,5 @@ td{
 
 #midiklik_message{
 	width:600px;
-	height: 100px
+	height: 220px
 }

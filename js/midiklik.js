@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 const ledwrapper = require('./ledwrapper.js');
 
 const DEFAULT_EOM = "6.USB product string"
-const SERIAL_MODE_SYSEX = "F0 77 77 78 08 F7";
+const SERIAL_MODE_SYSEX = "77 77 78 08";
 const SERIAL_MODE_SYSEX_WAIT = 2500;
 const DEFAULT_WAIT = 2500;
 
@@ -62,7 +62,9 @@ const MidiKlik = class extends EventEmitter {
 	}
 
 	alsaID(name, callback){
+
 		var rv = false;
+
 		shell('sudo aconnect -l', function(data){
 			var lines = data.stdout.split('\n');
 			for (let c=0; c<lines.length; c++){
@@ -75,7 +77,7 @@ const MidiKlik = class extends EventEmitter {
 		});		
 	}
 
-	sendSysEx(sysEx, callback){
+	sendSysEx1(sysEx, callback){
 
 		this.alsaID(this.midiklikName, (alsaClientID) => {
 
@@ -96,6 +98,22 @@ const MidiKlik = class extends EventEmitter {
 
 		});
 	}
+
+	sendSysEx(sysEx, callback){
+
+		//let midiName = "MuchoMIDI3x MIDI 1";
+		let midiName = "USB MIDIKliK 4x4 MIDI 1";
+
+		var cmd = 'sudo /home/pi/midimatrix/tools/sendmidi dev "' + midiName + '" hex syx ' + sysEx.toString();
+			
+		shell(cmd, (shellReply) => {
+			this.emit('mk_message', cmd);
+			if (callback) callback(true);
+		});	
+
+	}
+
+
 
 	switchValue(s) {
 
@@ -174,14 +192,21 @@ const MidiKlik = class extends EventEmitter {
 
 			if(currentStatus.currentRoutes == true){
 				that.emit('mk_routes', that.currentRoutes);
+
 			} else {
+
 				if(currentStatus.serialPortPath == true){
+
 					if (currentStatus.portOpen == false) {
+
 						that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
 						that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+
 						that.lineStream.on('data', (serialData) =>{
 							let line = serialData.toString();
 							that.serialBuffer.push(line);	
+							that.emit('mk_message', line + "\r\n");
+							console.log(line);
 
 							if (line.indexOf(DEFAULT_EOM) > -1){
 								let routes = that.processRoutingTable(that.serialBuffer);
@@ -209,10 +234,14 @@ const MidiKlik = class extends EventEmitter {
 
 							that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
 							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+
 							that.lineStream.on('data', (serialData) =>{
 						
 								let line = serialData.toString();
 								that.serialBuffer.push(line);	
+								that.emit('mk_message', line + "\r\n");
+								console.log(line);
+
 								if (line.indexOf(DEFAULT_EOM) > -1){
 									let routes = that.processRoutingTable(that.serialBuffer);
 									that.serialBuffer = [];

@@ -11,7 +11,7 @@ printer = (msg) => {
 		msgtosend = JSON.stringify(msg);
 	}
 
-	$("#midiklik_message").append(msgtosend + "\r\n");
+	$("#midiklik_message").prepend(msgtosend + "\r\n");
 }
 
 _requestRouteInfo = () => {
@@ -66,7 +66,7 @@ createSysExOnCheckboxClick = (row) => {
 	cableFilterMask = filterMask(row, 0, routeTable.routes);
 	jackFilterMask = filterMask(row, 4, routeTable.routes);
 
-	sysEx = "F0 77 77 78 0F 01 " + sourceType + " " + id + " " + filterFilterMask + " " + cableFilterMask + " " + jackFilterMask + " F7";
+	sysEx = "77 77 78 0F 01 " + sourceType + " " + id + " " + filterFilterMask + " " + cableFilterMask + " " + jackFilterMask;
 	
 	return sysEx;
 }

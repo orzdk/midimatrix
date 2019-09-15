@@ -32,7 +32,7 @@ console.log("MidiMatrix & socket.io @ http://localhost:" + port + ", CTRL + C to
 
 /* MidiKLiK injection ---------------------------------------------------------------*/
 
-MidiKlik = new midiklik("MuchoMIDI3x");
+MidiKlik = new midiklik("USB MIDIKliK 4x4");
 
 MidiKlik.on('mk_routes', (data) => {
 	MidiKlik.LedWrapper.lightUp(data.routes);
@@ -737,10 +737,11 @@ apiRoutes.post('/sendmidi', function(req, res){
 
 });
 
-/* UsbMidiKlik temporary crude injection BEGIN */
+/* UsbMidiKlik injection BEGIN */
 
 apiRoutes.post('/sendsysex', (req, res) => {	
 	MidiKlik.sendSysEx(req.body.sysex);
+	 res.sendStatus(200);
 });
 
 apiRoutes.post('/requestconfiguration', (req, res) => {	
@@ -749,18 +750,20 @@ apiRoutes.post('/requestconfiguration', (req, res) => {
 });
 
 apiRoutes.post('/boottomidimode', (req, res) => {	
+	MidiKlik.LedWrapper.light_M();	
 	MidiKlik.bootToMidiMode();
 	res.sendStatus(200);	
 });
 
-apiRoutes.post('/boottoserialmode', (req, res) => {	
+apiRoutes.post('/boottoserialmode', (req, res) => {
+	MidiKlik.LedWrapper.light_s();	
 	MidiKlik.bootToSerialMode();
 	res.sendStatus(200);	
 });
 
 apiRoutes.post('/sendserialchar', (req, res) => {	
 	if (Object.keys(MidiKlik.serialPort).length > 0){
-		MidiKlik.serialPort.write(req.body.char);
+		MidiKlik.serialPort.write(req.body.char + "\r\n");
 		res.sendStatus(200);
 	} else {
 		res.sendStatus(404);
@@ -778,7 +781,8 @@ apiRoutes.post('/lightdown', (req, res) => {
 });
 
 
-/* UsbMidiKlik temporary crude injection END */
+/* UsbMidiKlik injection END */
+
 
 
 app.use('/api', apiRoutes);
