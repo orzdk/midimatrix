@@ -7,10 +7,10 @@ const ledwrapper = require('./ledwrapper.js');
 
 const DEFAULT_EOM = "6.USB product string"
 const SERIAL_MODE_SYSEX = "77 77 78 08";
-const SERIAL_MODE_SYSEX_WAIT = 2500;
-const DEFAULT_WAIT = 2500;
 
-const serialPortPath = "/dev/midiklik";
+const SERIAL_MODE_SYSEX_WAIT = 2500;
+const SERIAL_PORT_CREATE_WAIT = 1500;
+const SERIAL_INPUT_WAIT = 1000;
 
 String.prototype.replaceAll = function(search, replace) {
     var that = this;
@@ -25,32 +25,29 @@ var shell = (cmd, callback) => {
 
 const MidiKlik = class extends EventEmitter {
 
-	constructor(_midiInterfaceName) {
+	constructor(midiklikConfig) {
 		
 		super();
 
-		var self = this;
-
-		this.eventEmitter = {};
-
-		this.serialPortOptions = {
-		    baudRate : 115200,
-		    dataBits : 8,
-		    parity : 'none',
-		    stopBits: 1,
-		    flowControl : false,
-		    lock:false
-		}
-
 		this.serialPort = {};
-		this.serialBuffer = [];   
 		this.lineStream = {};
-		
-		this.midiklikName = _midiInterfaceName;
-		this.midiklikAlsaClientID = "";
-		this.currentRoutes = {};	
-
+		this.routeCache = {};		 
+		this.serialBuffer = [];		
+		this.midiklikConfig = midiklikConfig;
 		this.LedWrapper = new ledwrapper();
+		this.onSerialData = this.onSerialData.bind(this);
+    }
+
+    mkEmitRoutes(data){
+    	this.emit("mk",{type: "routes",data: data});
+    }
+
+    mkEmitMessage(data){
+    	this.emit("mk",{type: "message",data: data});
+    }
+
+    mkEmitHeartbeat(data){
+    	this.emit("mk",{type: "heartbeat",data: data});
     }
 
 	keyCount(obj){
@@ -59,6 +56,11 @@ const MidiKlik = class extends EventEmitter {
 		} else {
 			return 0;
 		}
+	}
+
+	switchValue(s) {
+
+		return s == "X" ? 1 : s == "." ? 0 : null;
 	}
 
 	alsaID(name, callback){
@@ -77,47 +79,16 @@ const MidiKlik = class extends EventEmitter {
 		});		
 	}
 
-	sendSysEx1(sysEx, callback){
-
-		this.alsaID(this.midiklikName, (alsaClientID) => {
-
-			if (alsaClientID != false){
-
-				var cmd = 'send_midi ' + alsaClientID + ':0 SYSEX,' + sysEx.toString().replaceAll(" ",",");
-				
-				shell(cmd, (shellReply) => {
-					this.emit('mk_message', cmd);
-					if (callback) callback(true);
-				});	
-
-			} else {
-				this.emit('mk_message', 'no_alsa ' + this.midiklikName);
-				if (callback) callback(false);
-
-			}
-
-		});
-	}
-
 	sendSysEx(sysEx, callback){
 
-		//let midiName = "MuchoMIDI3x MIDI 1";
-		let midiName = "USB MIDIKliK 4x4 MIDI 1";
+		var cmd = 'sudo /home/pi/midimatrix/tools/sendmidi dev "' + this.midiklikConfig.sysexConnectionName + '" hex syx ' + sysEx.toString();
+		
+		this.mkEmitMessage(cmd);
 
-		var cmd = 'sudo /home/pi/midimatrix/tools/sendmidi dev "' + midiName + '" hex syx ' + sysEx.toString();
-			
 		shell(cmd, (shellReply) => {
-			this.emit('mk_message', cmd);
-			if (callback) callback(true);
+			if (shellReply.stderr != "") this.mkEmitMessage("Error in sendSysEx() " + shellReply.stderr);
+			if (callback) setTimeout(()=>{callback(true);},SERIAL_MODE_SYSEX_WAIT);
 		});	
-
-	}
-
-
-
-	switchValue(s) {
-
-		return s == "X" ? 1 : s == "." ? 0 : null;
 	}
 
 	processRoutingTable(serialBuffer){
@@ -156,203 +127,137 @@ const MidiKlik = class extends EventEmitter {
 
 		let status = {
 			serialPortPath: false,
-			currentRoutes: false,
-			portOpen: false
+			routeCache: false,
+			portOpen: false,
+			alsaID: false
 		}
 
 		let that = this;
 
-		shell('ls ' + serialPortPath, function(ls){
+		shell('ls ' + this.midiklikConfig.serialPath, (ls)=>{
+			that.alsaID(that.midiklikConfig.interfaceName, (alsaID)=>{
 
-			if (ls.stdout.indexOf(serialPortPath) > -1){
-				status.serialPortPath = true;
-			}
+				if (ls.stdout.indexOf(this.midiklikConfig.serialPath) > -1){
+					status.serialPortPath = true;
+				}
 
-			if(that.keyCount(that.currentRoutes) > 0 ){
-				status.currentRoutes = true;
-			}
+				if(that.keyCount(that.serialPort) > 0){
+					status.portOpen = true;
+				}
 
-			if(that.keyCount(that.serialPort) > 0){
-				status.portOpen = true;
-			}
+				if(that.keyCount(that.routeCache) > 0 ){
+					status.routeCache = true;
+				}
 
-			callback(status);			
+				status.alsaID = alsaID;
+
+				that.emit("mk_message",status);
+
+				callback(status);			
+			});
 		});
 	}
 
-	requestConfiguration(){
+	writeSerial_EXIT(port){
+		port.write("x");
+		setTimeout(()=>{
+			port.write("y");
+				port = {};
+		},SERIAL_INPUT_WAIT);
+	}
 
+	writeSerial_CHAR(port, char, wait){
+		setTimeout(()=>{
+			port.write(char);
+		},wait);
+	}
+
+	onSerialData(serialData){
+		let line = serialData.toString();
+		this.mkEmitHeartbeat(line);		
+		this.serialBuffer.push(line);	
+		if (line.indexOf(DEFAULT_EOM) > -1){
+			let routes = this.processRoutingTable(this.serialBuffer);
+			this.serialBuffer = [];	
+			if (this.keyCount(routes.routes) > 0){
+				this.routeCache = routes;						
+				this.mkEmitRoutes(routes);			
+				if (this.midiklikConfig.ledEnabled == true) this.LedWrapper.lightUp(data.routes);	
+		  	};
+		}
+	}
+
+	requestConfiguration(){
 		var that = this;
 
-		that.emit("mk_message","config_request");
+		that.mkEmitMessage("requestConfiguration()");
 
 		that.checkCurrentConnectionStatus((currentStatus) => {
-
-			that.emit("mk_message",currentStatus);
-
-			if(currentStatus.currentRoutes == true){
-				that.emit('mk_routes', that.currentRoutes);
-
+			if(currentStatus.routeCache == true){
+				that.mkEmitMessage("*CACHE*");
+				that.mkEmitRoutes(that.routeCache);
+				if (that.midiklikConfig.ledEnabled == true) this.LedWrapper.lightUp(data.routes);
 			} else {
-
 				if(currentStatus.serialPortPath == true){
-
 					if (currentStatus.portOpen == false) {
-
-						that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
+						that.mkEmitMessage(this.midiklikConfig.serialPath + " available. Creating new port");
+						that.serialPort = new SerialPort(this.midiklikConfig.serialPath, that.midiklikConfig.serialPortOptions); 
 						that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
-
-						that.lineStream.on('data', (serialData) =>{
-							let line = serialData.toString();
-							that.serialBuffer.push(line);	
-							that.emit('mk_message', line + "\r\n");
-							console.log(line);
-
-							if (line.indexOf(DEFAULT_EOM) > -1){
-								let routes = that.processRoutingTable(that.serialBuffer);
-								that.serialBuffer = [];	
-								if (that.keyCount(routes.routes) > 0){
-									that.currentRoutes = routes;						
-									that.emit('mk_routes', routes);	
-							  	};
-							}
-						});
-						setTimeout(()=>{
-							that.serialPort.write("0");
-						},DEFAULT_WAIT);
+						that.lineStream.on('data', this.onSerialData);
+						that.mkEmitMessage("Port connected, requesting Config");
+						that.writeSerial_CHAR(that.serialPort, "0", SERIAL_PORT_CREATE_WAIT);
 					}
 					else {
-						that.serialPort.write("0");
+						that.mkEmitMessage("Port connected, requesting Config");
+						that.writeSerial_CHAR(that.serialPort, "0", 0);
 					}
 				}
 			    else {
-			    	that.emit('mk_message', "pls_wait_booting_serial");	
-
-					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
-						
-						setTimeout(()=>{
-
-							that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
-							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
-
-							that.lineStream.on('data', (serialData) =>{
-						
-								let line = serialData.toString();
-								that.serialBuffer.push(line);	
-								that.emit('mk_message', line + "\r\n");
-								console.log(line);
-
-								if (line.indexOf(DEFAULT_EOM) > -1){
-									let routes = that.processRoutingTable(that.serialBuffer);
-									that.serialBuffer = [];
-									if (that.keyCount(routes.routes) > 0){
-										that.currentRoutes = routes;
-										that.emit('mk_routes', routes);	
-								  	};
-								}
-							});							
-					
-							setTimeout(()=>{
-								that.serialPort.write("0");
-							},DEFAULT_WAIT);
-							
-						},SERIAL_MODE_SYSEX_WAIT);
-
-					});
+			    	that.bootToSerialMode()
 				}
 			}	
-
 		});
 	}
 	
 	bootToSerialMode(){
-
 		var that = this;
-
-		that.emit("mk_message","bootToSerial");
-
+		that.routeCache = {}		
+		that.mkEmitMessage("bootToSerialMode() - Please wait");
 		that.checkCurrentConnectionStatus((currentStatus) => {
-
-			that.emit("mk_message",currentStatus);
-
-			if(currentStatus.serialPortPath == false){
-
-					that.emit("mk_message", serialPortPath + "available");
-					that.sendSysEx(SERIAL_MODE_SYSEX, () => {
-
-						setTimeout(()=>{
-							that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
-							that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
-							that.lineStream.on('data', (serialData) =>{
-								let line = serialData.toString();
-								that.serialBuffer.push(line);	
-								if (line.indexOf(DEFAULT_EOM) > -1){
-									let routes = that.processRoutingTable(that.serialBuffer);
-									that.serialBuffer = [];
-									if (that.keyCount(routes.routes) > 0){
-										that.currentRoutes = routes;
-										that.emit('mk_routes', routes);	
-								  	};
-								}
-							});		
-
-							setTimeout(()=>{
-								that.serialPort.write("0");
-							},DEFAULT_WAIT);
-
-						},SERIAL_MODE_SYSEX_WAIT);
-					});
-
-				} else{
-					that.emit("mk_message","already in serial");
-				}
-
+			if(currentStatus.alsaID != false){
+				that.sendSysEx(SERIAL_MODE_SYSEX, () => {
+					that.serialPort = new SerialPort(that.midiklikConfig.serialPath, that.midiklikConfig.serialPortOptions); 
+					that.lineStream = that.serialPort.pipe(new Readline("\r\n"));
+					that.lineStream.on('data', this.onSerialData);	
+					that.mkEmitMessage("Port connected, requesting Config");
+					that.writeSerial_CHAR(that.serialPort, "0", SERIAL_PORT_CREATE_WAIT);
+				});
+			} else{
+				that.mkEmitMessage("No AlsaID. Already in serial mode ?");
+			}
 		});
 	}
 
 	bootToMidiMode(){
-
-		this.emit("mk_message","boot_to_midi_mode");
-		this.currentRoutes = {}
-
 		var that = this;
-
+		that.routeCache = {}
+		that.mkEmitMessage("bootToMidiMode() - Please wait");
 		that.checkCurrentConnectionStatus((currentStatus) => {
-
 			if(currentStatus.serialPortPath == true){
-			
-				that.emit("mk_message", serialPortPath + "_available");
-
-				if(that.keyCount(that.serialPort) > 0){
-					
-					that.emit("mk_message","serialport_object_exist");
-					that.serialPort.write("x");
-					setTimeout(()=>{
-						that.serialPort.write("y");
-						setTimeout(()=>{
-							that.serialPort = {};
-						},500);
-					},1000);
+				if(currentStatus.portOpen == true){
+					that.mkEmitMessage("Port open, writeSerial_EXIT 0");			
+					that.writeSerial_EXIT(that.serialPort,0)
 				}
 				else {
-					that.emit("mk_message","serialport_object_not_exist");
-
-					that.serialPort = new SerialPort(serialPortPath, that.serialPortOptions); 
-					that.serialPort.write("x");
-					setTimeout(()=>{
-						that.serialPort.write("y");
-						setTimeout(()=>{
-							that.serialPort = {};
-						},500);
-					},1000);
+					that.mkEmitMessage(that.midiklikConfig.serialPath + " available, creating new serialPort");			
+					that.serialPort = new SerialPort(that.midiklikConfig.serialPath, that.midiklikConfig.serialPortOptions); 
+					that.mkEmitMessage("Port open, writeSerial_EXIT " + SERIAL_PORT_CREATE_WAIT);			
+					that.writeSerial_EXIT(that.serialPort, SERIAL_PORT_CREATE_WAIT);
 				}
-
 			} else {
-				that.emit("mk_message",serialPortPath + "_not_available");
+				that.mkEmitMessage(that.midiklikConfig.serialPath + " not available. Already in MIDI mode ?");
 			}
-
 		});	
-
 	}
 
 }

@@ -55,7 +55,7 @@ filterMask = (row, offset, lookin) => {
 
 	var bin="";
 	for(var i=0;i<4;i++){ bin += String(lookin[row][i+offset]) }
-	return "0" + ConvertBase.bin2hex(bin).toString().toUpperCase();
+	return "0" + ConvertBase.bin2hex(bin.split("").reverse().join("")).toString().toUpperCase();
 }
 
 createSysExOnCheckboxClick = (row) => {
@@ -108,21 +108,35 @@ renderCheckboxes = (rt, renderContainer, rows, cols, type, code) => {
 	$(renderContainer).html("<table>" + t + "</table>");
 }
 
+var blink;
+var blinker = () => {
+	
+	clearTimeout(blink);
+
+	$("#serialActivity").addClass("uc-red");
+
+	blink = setTimeout(()=>{
+		$("#serialActivity").removeClass("uc-red");
+	},750);
+
+}
+
 $(document).ready(() => {
 
 	var socket = io.connect(ip);
 
-	socket.on("mk_message", (message, d) => {
+	socket.on("mk", (data, d) => {
 
-		printer(message);
-	});
-
-	socket.on("mk_routes", (data, d) => {		
-		printer("[data]");
-
-		routeTable = data;
-		renderCheckboxes(data.routes, "#routeTableContainer", 8, 8, "route", "r");
-		renderCheckboxes(data.filters, "#filterTableContainer", 8, 4, "filter", "f");
+		if(data.type=="message"){
+			printer(data.data);
+		} else if(data.type=="routes") {
+			routeTable = data.data;
+			renderCheckboxes(routeTable.routes, "#routeTableContainer", 8, 8, "route", "r");
+			renderCheckboxes(routeTable.filters, "#filterTableContainer", 8, 4, "filter", "f");
+			printer("[data]");
+		} else if(data.type=="heartbeat") {
+			blinker();
+		}
 	});
 
 });

@@ -1,16 +1,16 @@
-body{
-	background-color: #cccccc /*MediumSeaGreen */ /*rgb(220,220,160)*/;
-	padding:0px!important;
-	width: 100%;
-	height: 100%;
-	overflow-x:hidden;
-}
-
 *{
   font-family:arial;
   font-size:9px;
   outline:0;
 
+}
+
+body{
+	background-color: #cccccc; 
+	padding:0px!important;
+	width: 100%;
+	height: 100%;
+	overflow-x:hidden;
 }
 
 td{
@@ -27,7 +27,6 @@ a{
 	text-decoration: none;
 	color:black
 }
-
 
 input[type="text"]{
 	width: 75px;

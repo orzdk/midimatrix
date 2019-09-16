@@ -13,7 +13,6 @@ var midiklik = require('./js/midiklik.js');
 port = 8000;
 
 var app = express(); 
-
 app.use(express.static(__dirname));
 app.use(bodyParser.json());    
 app.use(bodyParser.urlencoded({extended: true}));
@@ -27,25 +26,26 @@ var socketRoutes = express.Router();
 var operationTimeout = 2500;
 var running_scripts =  [];
 
-console.log("MidiMatrix & socket.io @ http://localhost:" + port + ", CTRL + C to shutdown");
+var midiklikConfig = {
+	interfaceName: "USB MIDIKliK 4x4",
+	sysexConnectionName: "USB MIDIKliK 4x4 MIDI 1",
+	ledEnabled: false,
+	serialPath: "/dev/midiklik",
+	serialPortOptions: {
+	    baudRate : 115200,
+	    dataBits : 8,
+	    parity : 'none',
+	    stopBits: 1,
+	    flowControl : false,
+	    lock:false
+	}
+}
 
+var MidiKlik = new midiklik(midiklikConfig);
 
-/* MidiKLiK injection ---------------------------------------------------------------*/
-
-MidiKlik = new midiklik("USB MIDIKliK 4x4");
-
-MidiKlik.on('mk_routes', (data) => {
-	MidiKlik.LedWrapper.lightUp(data.routes);
-    socket.sockets.emit("mk_routes", data);	 
+MidiKlik.on("mk", (data) => {
+	socket.sockets.emit("mk", data);	 
 });
-
-MidiKlik.on('mk_message', (message) => {
-	MidiKlik.LedWrapper.light_M();
-	socket.sockets.emit("mk_message", message);	 
-});
-
-/* ----------------------------------------------------------------------------------*/
-
 
 String.prototype.replaceAll = function(search, replace) {
 
@@ -750,13 +750,11 @@ apiRoutes.post('/requestconfiguration', (req, res) => {
 });
 
 apiRoutes.post('/boottomidimode', (req, res) => {	
-	MidiKlik.LedWrapper.light_M();	
 	MidiKlik.bootToMidiMode();
 	res.sendStatus(200);	
 });
 
 apiRoutes.post('/boottoserialmode', (req, res) => {
-	MidiKlik.LedWrapper.light_s();	
 	MidiKlik.bootToSerialMode();
 	res.sendStatus(200);	
 });
@@ -771,7 +769,7 @@ apiRoutes.post('/sendserialchar', (req, res) => {
 });
 
 apiRoutes.post('/lightup', (req, res) => {	
-	MidiKlik.LedWrapper.lightUp(MidiKlik.currentRoutes.routes);
+	if (MidiKlik.routeCache) MidiKlik.LedWrapper.lightUp(MidiKlik.routeCache.routes);
 	res.sendStatus(200);	
 });
 
@@ -782,8 +780,6 @@ apiRoutes.post('/lightdown', (req, res) => {
 
 
 /* UsbMidiKlik injection END */
-
-
 
 app.use('/api', apiRoutes);
 
@@ -872,3 +868,5 @@ socket.on("connection", function (client) {
 	}
 
 });
+
+console.log("[MidiMatrix @ http://localhost:" + port + "]");
