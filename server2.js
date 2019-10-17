@@ -1,65 +1,100 @@
+const { isText, isBinary, getEncoding } = require('istextorbinary');
 var fs = require("fs");
-const { isText, isBinary, getEncoding } = require('istextorbinary')
-
 var serialport = require("serialport");
 var portName = '/dev/ttyAMA0'; 
 var readData = ''; 
 
+var displayIDX = -1;
+var sysexFileList = [];
+
+var sysexBufferString;
+var sysexBuffer;
+var sysexBufferPacket;
+
+const sysexFolder = "./sysex";
+
+var bufHeadFileName = Buffer.from("F0", "hex");
+var bufHeadSysex = Buffer.from("F1", "hex");
+var bufTail = Buffer.from("FF", "hex");
+
 String.prototype.replaceAll = function(search, replace) {
     var that = this;
     return that.replace(new RegExp(search, 'g'), replace);
+
 }
 
-// var sp = new serialport(portName, {
-//   baudRate: 9600,
-//   dataBits: 8,
-//   parity: 'none',
-//   stopBits: 1,
-//   flowControl: false
-// });
+var sp = new serialport(portName, {
+  baudRate: 9600,
+  dataBits: 8,
+  parity: 'none',
+  stopBits: 1,
+  flowControl: false
 
-// sp.on('data', function (data) {
-// 	var index = data.toString();
-// 	console.log(data.toString());
-// });
+});
 
-// sp.on('close', function (err) {
-// 	console.log('port closed');
-// });
+sp.on('data', function (data) {
 
-// sp.on('error', function (err) {
-// 	console.error("error", err);
-// });
+	var command = data.toString();
 
-// sp.on('open', function () {
-// 	console.log('port opened...');
-// });
+	if (command == 0x1) {
+	
+		if (++displayIDX > sysexFileList.length-1) displayIDX = 0;
 
-writeSerial_CHAR = function(port, char, wait){
-	setTimeout(()=>{
-	  sp.write(char);
-	},wait);
-}
+		sysexBuffer = Buffer.from(sysexBufferString, "utf8");
+		sysexBufferPacket = Buffer.concat([ bufHeadFileName, sysexBuffer, bufTail ]);
+		sp.write(sysexBufferPacket);	
 
-//filename = "./sysex/2.syx";
-filename = "./sysex/1.txt";
-
-var tf = isText(filename);
-var bufstr;
-
-fs.readFile(filename, function(err, buf) {
-	bufstr = buf.toString().replaceAll(" ","");
-
-	if (tf){
-		bufstr = buf.toString().replaceAll(" ","");
-	} else {
-		bufstr = buf;
 	}
 
-	bufff = Buffer.from(bufstr, "hex");
-	console.log(bufff);
- 	
+	else if (command == 0x2) { 
+
+		var filepath = sysexFolder + "/" + sysexFileList[displayIDX];
+		var tf = isText(filepath);
+
+		fs.readFile(filepath, function(err, buf) {
+
+			if (tf){
+				sysexBufferString = buf.toString().replaceAll(" ","");
+				sysexBuffer = Buffer.from(sysexBufferString, "utf8");
+			} else {
+				sysexBuffer = Buffer.from(buf, "hex");
+			}
+
+			console.log(sysexBufferString);
+			console.log(sysexBuffer);
+
+			var sysexBufferPacket = Buffer.concat([ bufHeadSysex, sysexBuffer, bufTail ]);
+			sp.write(sysexBufferPacket);
+	 	
+		});
+	}
+
 });
+
+sp.on('close', function (err) {
+	console.log('port closed');
+});
+
+sp.on('error', function (err) {
+	console.error("error", err);
+});
+
+sp.on('open', function () {
+	console.log('port opened...');
+});
+
+getFolderContents = function(){
+	fs.readdir(sysexFolder, (err, files) => {
+	  files.forEach(file => {
+	    sysexFileList.push(file);
+	  });
+	});
+
+}
+
+getFolderContents();
+
+
 
 
 
