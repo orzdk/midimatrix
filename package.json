@@ -23,7 +23,7 @@
     "raspi": "^6.0.1",
     "raspi-serial": "^5.1.2",
     "serialport": "^7.1.5",
-    "socket.io": "^2.2.0"
+    "socket.io": "^2.4.0"
   },
   "devDependencies": {},
   "scripts": {
